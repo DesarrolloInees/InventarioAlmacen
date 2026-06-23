@@ -59,20 +59,33 @@
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold mb-1 dark:text-gray-300">3. Buscar o Escanear Artículo</label>
-                    <select id="buscador_general" class="w-full">
-                        <option value="">Escribe código o nombre...</option>
-                        <?php foreach ($data['inventario'] as $inv): ?>
-                            <option value="<?= $inv['id_interno'] ?>" data-tipo="<?= $inv['tipo'] ?>"
-                                data-nombre="<?= htmlspecialchars($inv['nombre']) ?>" data-codigo="<?= $inv['codigo'] ?>"
-                                data-condicion="<?= $inv['condicion'] ?>" data-stock="<?= $inv['stock'] ?>">
-                                [<?= strtoupper($inv['tipo']) ?><?= $inv['tipo'] === 'repuesto' ? ' - ' . $inv['condicion'] : '' ?>]
-                                [<?= $inv['codigo'] ?: 'S/C' ?>] <?= htmlspecialchars($inv['nombre']) ?> (Stock:
-                                <?= $inv['stock'] ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="lg:col-span-1 space-y-5 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl">
+
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-indigo-600 dark:text-indigo-400">
+                            <i class="fas fa-barcode"></i> 3. Escanear con Pistola
+                        </label>
+                        <input type="text" id="lector_barras" autofocus
+                            class="w-full p-3 border-2 border-indigo-400 rounded-lg dark:bg-gray-800 dark:text-white shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                            placeholder="Dispara el código aquí...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold mb-1 dark:text-gray-300">O buscar manualmente</label>
+                        <select id="buscador_general" class="w-full">
+                            <option value="">Escribe código o nombre...</option>
+                            <?php foreach ($data['inventario'] as $inv): ?>
+                                <option value="<?= $inv['id_interno'] ?>" data-tipo="<?= $inv['tipo'] ?>"
+                                    data-nombre="<?= htmlspecialchars($inv['nombre']) ?>"
+                                    data-codigo="<?= $inv['codigo'] ?>" data-condicion="<?= $inv['condicion'] ?>"
+                                    data-stock="<?= $inv['stock'] ?>">
+                                    [<?= strtoupper($inv['tipo']) ?><?= $inv['tipo'] === 'repuesto' ? ' - ' . $inv['condicion'] : '' ?>]
+                                    [<?= $inv['codigo'] ?: 'S/C' ?>] <?= htmlspecialchars($inv['nombre']) ?> (Stock:
+                                    <?= $inv['stock'] ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -134,6 +147,47 @@
 
             $(this).val(null).trigger('change');
             setTimeout(() => { $(this).select2('open'); }, 100);
+        });
+
+        // Capturar el disparo de la pistola de código de barras
+        $('#lector_barras').on('keypress', function (e) {
+            // Si la tecla presionada es Enter (código 13)
+            if (e.which === 13) {
+                e.preventDefault(); // Evitamos que el formulario haga submit (si lo hubiera)
+
+                let codigoEscaneado = $(this).val().trim();
+                if (codigoEscaneado === '') return;
+
+                // Buscamos dentro de las opciones de tu select el que tenga ese data-codigo
+                let opcionEncontrada = $('#buscador_general option').filter(function () {
+                    return $(this).data('codigo') == codigoEscaneado;
+                }).first();
+
+                if (opcionEncontrada.length > 0) {
+                    let el = opcionEncontrada[0].dataset;
+
+                    // Reutilizamos tu función actual
+                    agregarAlCarrito({
+                        id: opcionEncontrada.val(),
+                        tipo: el.tipo,
+                        nombre: el.nombre,
+                        codigo: el.codigo,
+                        condicion: el.condicion,
+                        stock: parseInt(el.stock)
+                    });
+
+                    // Limpiamos el input para el siguiente escaneo
+                    $(this).val('');
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No encontrado',
+                        text: `El artículo con código [${codigoEscaneado}] no existe o no tiene stock disponible.`,
+                        timer: 2000 // Opcional: que se cierre solo para no interrumpir el flujo
+                    });
+                    $(this).val(''); // Limpiamos aunque falle
+                }
+            }
         });
     });
 

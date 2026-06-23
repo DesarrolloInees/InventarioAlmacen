@@ -20,7 +20,6 @@ class productoEliminarControlador
 
     public function index()
     {
-        session_start();
         $nivelUsuario = $_SESSION['nivel_acceso'] ?? 0;
         
         // Seguridad: Solo admins pueden eliminar
