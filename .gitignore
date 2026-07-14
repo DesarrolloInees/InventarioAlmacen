@@ -1,2 +1,7 @@
 /vendor
 .env
+
+frontend-inventarioAlmacen/node_modules/
+frontend-inventarioAlmacen/.angular/
+frontend-inventarioAlmacen/dist/
+frontend-inventarioAlmacen/tmp/
