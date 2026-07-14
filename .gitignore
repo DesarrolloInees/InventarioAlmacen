@@ -1,2 +1,7 @@
 /vendor
 .env
+# Ignorar dependencias y caché de Angular de la subcarpeta
+frontend-inventarioAlmacen/node_modules/
+frontend-inventarioAlmacen/.angular/
+frontend-inventarioAlmacen/dist/
+frontend-inventarioAlmacen/tmp/
