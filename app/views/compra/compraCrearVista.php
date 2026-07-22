@@ -4,6 +4,64 @@ if (!defined('ENTRADA_PRINCIPAL'))
     die("Acceso denegado.");
 ?>
 
+<!-- Estilos para adaptar Select2 a Tailwind y Modo Oscuro -->
+<style>
+    /* Estilos generales (altura y bordes para que coincida con Tailwind) */
+    .select2-container .select2-selection--single {
+        height: 48px !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 46px !important;
+    }
+
+    /* --- MODO OSCURO --- */
+    /* 1. Caja principal (cerrada) */
+    .dark .select2-container .select2-selection--single {
+        background-color: #111827 !important; /* bg-gray-900 */
+        border-color: #374151 !important; /* border-gray-700 */
+    }
+    .dark .select2-container .select2-selection__rendered {
+        color: #ffffff !important;
+    }
+
+    /* 2. Contenedor del menú desplegable */
+    .dark .select2-dropdown {
+        background-color: #111827 !important; /* bg-gray-900 */
+        border-color: #374151 !important; /* border-gray-700 */
+    }
+
+    /* 3. Caja de búsqueda dentro del menú */
+    .dark .select2-search--dropdown .select2-search__field {
+        background-color: #1f2937 !important; /* bg-gray-800 */
+        border: 1px solid #4b5563 !important; /* border-gray-600 */
+        color: #ffffff !important;
+        border-radius: 0.375rem !important;
+        outline: none !important;
+    }
+
+    /* 4. Opciones de la lista */
+    .dark .select2-results__option {
+        background-color: #111827 !important;
+        color: #d1d5db !important; /* text-gray-300 */
+    }
+
+    /* 5. Opción seleccionada previamente */
+    .dark .select2-results__option[aria-selected="true"] {
+        background-color: #1f2937 !important; /* bg-gray-800 */
+        color: #ffffff !important;
+    }
+
+    /* 6. Opción resaltada (al pasar el ratón por encima o navegar con teclado) */
+    .dark .select2-results__option--highlighted[aria-selected] {
+        background-color: #374151 !important; /* bg-gray-700 */
+        color: #ffffff !important;
+    }
+</style>
+
 <div class="w-full max-w-5xl mx-auto px-4 md:px-6">
     <div
         class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 transition-colors">
@@ -76,7 +134,7 @@ if (!defined('ENTRADA_PRINCIPAL'))
                             class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="id_repuesto" name="id_repuesto"
-                            class="w-full p-3 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white">
+                            class="w-full p-3 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white select2-elemento">
                             <option value="">-- Elige el repuesto del catálogo --</option>
                             <?php foreach ($repuestosActivos as $rep): ?>
                                 <?php $selected = (isset($datosPrevios['id_repuesto']) && $datosPrevios['id_repuesto'] == $rep['id_repuesto']) ? 'selected' : ''; ?>
@@ -96,7 +154,7 @@ if (!defined('ENTRADA_PRINCIPAL'))
                         Gasto <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <select id="id_producto" name="id_producto"
-                            class="w-full p-3 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white">
+                            class="w-full p-3 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white select2-elemento">
                             <option value="">-- Elige el producto/insumo --</option>
                             <?php foreach ($productosActivos as $prod): ?>
                                 <?php $selected = (isset($datosPrevios['id_producto']) && $datosPrevios['id_producto'] == $prod['id_producto']) ? 'selected' : ''; ?>
@@ -127,7 +185,7 @@ if (!defined('ENTRADA_PRINCIPAL'))
                         class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Proveedor Relacionado
                         <span class="text-red-500">*</span></label>
                     <select id="id_proveedor" name="id_proveedor" required
-                        class="mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white focus:ring-green-500">
+                        class="mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border rounded-lg text-gray-900 dark:text-white focus:ring-green-500 select2-elemento">
                         <option value="">-- Selecciona el proveedor --</option>
                         <?php foreach ($proveedoresActivos as $prov): ?>
                             <?php $selected = (isset($datosPrevios['id_proveedor']) && $datosPrevios['id_proveedor'] == $prov['id_proveedor']) ? 'selected' : ''; ?>
@@ -182,6 +240,10 @@ if (!defined('ENTRADA_PRINCIPAL'))
     </div>
 </div>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
     function conmutarTipoItem(tipo) {
         const wrpRepuestos = document.getElementById('wrapper_repuestos');
@@ -195,26 +257,38 @@ if (!defined('ENTRADA_PRINCIPAL'))
         if (tipo === 'repuesto') {
             wrpRepuestos.classList.remove('hidden');
             wrpProductos.classList.add('hidden');
+            
             selectRepuesto.setAttribute('required', 'required');
             selectProducto.removeAttribute('required');
-            selectProducto.value = "";
+            
+            $('#id_producto').val(null).trigger('change');
 
             labelRep.className = "flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-600 shadow-sm";
             labelProd.className = "flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 opacity-60";
         } else {
             wrpProductos.classList.remove('hidden');
             wrpRepuestos.classList.add('hidden');
+            
             selectProducto.setAttribute('required', 'required');
             selectRepuesto.removeAttribute('required');
-            selectRepuesto.value = "";
+            
+            $('#id_repuesto').val(null).trigger('change');
 
             labelProd.className = "flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all bg-purple-50 dark:bg-purple-900/20 border-purple-500 text-purple-600 shadow-sm";
             labelRep.className = "flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 opacity-60";
         }
     }
 
-    // Inicializar visual al cargar la página
     document.addEventListener("DOMContentLoaded", function () {
+        $('.select2-elemento').select2({
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return "No se encontraron resultados";
+                }
+            }
+        });
+
         const tipoInicial = document.querySelector('input[name="tipo_item"]:checked').value;
         conmutarTipoItem(tipoInicial);
     });
