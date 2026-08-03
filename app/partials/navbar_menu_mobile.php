@@ -82,6 +82,12 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 <a href="<?= BASE_URL ?>repuestoVer"
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Gestionar Repuestos
                 </a>
+                <a href="<?= BASE_URL ?>repuestoFormulaVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Ensamblar Repuestos
+                </a>
+                <a href="<?= BASE_URL ?>repuestoEnsamblar"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Gestionar Repuestos Reparados
+                </a>
             </div>
         </details>
 
@@ -121,6 +127,12 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
             <div class="text-gray-600 dark:text-gray-400 mt-1 mb-2 pl-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg py-2">
                 <a href="<?= BASE_URL ?>inventarioVer"
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Inventario Almacén
+                </a>
+                <a href="<?= BASE_URL ?>bodegaVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Administrador Bodegas
+                </a>
+                <a href="<?= BASE_URL ?>maquinaInventarioVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Inventario Bodega
                 </a>
             </div>
         </details>

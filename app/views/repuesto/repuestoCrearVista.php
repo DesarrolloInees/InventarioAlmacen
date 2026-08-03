@@ -46,7 +46,7 @@
 
         <div class="mb-8 border-b border-gray-100 dark:border-gray-700 pb-6 flex justify-between items-center">
             <h1 class="text-3xl font-extrabold text-gray-800 dark:text-white flex items-center">
-                <i class="fas fa-edit text-yellow-500 mr-3"></i> Editar Repuesto
+                <i class="fas fa-edit text-yellow-500 mr-3"></i> Crear Repuesto
             </h1>
         </div>
 
@@ -115,6 +115,8 @@
                         <select name="condicion" id="condicion" class="w-full select2-buscador" required>
                             <option value="nuevo" <?= (($datosRepuesto['condicion'] ?? '') === 'nuevo') ? 'selected' : '' ?>>NUEVO</option>
                             <option value="recuperado" <?= (($datosRepuesto['condicion'] ?? '') === 'recuperado') ? 'selected' : '' ?>>RECUPERADO</option>
+                            <option value="por revisar" <?= (($datosRepuesto['condicion'] ?? '') === 'por revisar') ? 'selected' : '' ?>>POR REVISAR</option>
+
                         </select>
                     </div>
                 </div>

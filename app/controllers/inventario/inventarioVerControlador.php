@@ -29,7 +29,7 @@ class inventarioVerControlador
 
         foreach ($inventario as $item) {
             $totalUnidades += $item['cantidad_total'];
-            
+
             // Determinar el valor de venta correcto
             $valorUnitario = !empty($item['id_repuesto']) ? $item['valor_repuesto'] : $item['valor_producto'];
             $totalDinero += ($item['cantidad_total'] * $valorUnitario);
@@ -48,8 +48,74 @@ class inventarioVerControlador
                 'bajo_stock' => $itemsBajoStock
             ]
         ];
-        
+
         $vistaContenido = "app/views/inventario/inventarioVerVista.php";
         include "app/views/plantillaVista.php";
+    }
+
+    public function actualizarStockAjax()
+    {
+        $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] ?? 0) == 2);
+
+        if (!$esAdmin) {
+            echo json_encode(['success' => false, 'message' => 'No tienes permisos para realizar esta acción.']);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_stock = $_POST['id_stock'] ?? null;
+            $nueva_cantidad = $_POST['nueva_cantidad'] ?? null;
+
+            if ($id_stock !== null && $nueva_cantidad !== null) {
+                $resultado = $this->modelo->actualizarStockManual($id_stock, $nueva_cantidad);
+
+                if ($resultado) {
+                    echo json_encode(['success' => true, 'message' => 'Stock actualizado correctamente.']);
+                    exit;
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error al actualizar en la base de datos.']);
+                    exit;
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Faltan datos para procesar la solicitud.']);
+                exit;
+            }
+        }
+
+        echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+        exit;
+    }
+
+    // Elimina un registro de inventario_stock (para poder corregir cargas erróneas y re-ingresarlas después)
+    public function eliminarStockAjax()
+    {
+        $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] ?? 0) == 2);
+
+        if (!$esAdmin) {
+            echo json_encode(['success' => false, 'message' => 'No tienes permisos para realizar esta acción.']);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_stock = $_POST['id_stock'] ?? null;
+
+            if ($id_stock !== null) {
+                $resultado = $this->modelo->eliminarStock($id_stock);
+
+                if ($resultado) {
+                    echo json_encode(['success' => true, 'message' => 'Ítem eliminado del inventario correctamente.']);
+                    exit;
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error al eliminar el registro en la base de datos.']);
+                    exit;
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Falta el id_stock para procesar la solicitud.']);
+                exit;
+            }
+        }
+
+        echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
+        exit;
     }
 }

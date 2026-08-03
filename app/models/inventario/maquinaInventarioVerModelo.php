@@ -16,7 +16,7 @@ class MaquinaInventarioVerModelo {
                         im.condicion,
                         im.estado_remision,
                         im.fecha_registro,
-                        tm.nombre_tipo AS tipo_maquina, /* Cambia 'nombre_tipo' por la columna real de tu tabla tipomaquina */
+                        tm.nombreTipoMaquina AS tipo_maquina,
                         b.nombre_bodega
                     FROM inventario_maquinas im
                     INNER JOIN tipomaquina tm ON im.idTipoMaquina = tm.idTipoMaquina

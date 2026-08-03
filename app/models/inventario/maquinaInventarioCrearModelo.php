@@ -10,8 +10,8 @@ class MaquinaInventarioCrearModelo {
 
     public function obtenerTiposMaquina() {
         try {
-            // Asumo que tienes idTipoMaquina y nombre_tipo en tu tabla
-            $sql = "SELECT idTipoMaquina, nombre_tipo FROM tipomaquina ORDER BY nombre_tipo ASC";
+            // Asumo que tienes idTipoMaquina y nombreTipoMaquina en tu tabla
+            $sql = "SELECT idTipoMaquina, nombreTipoMaquina FROM tipomaquina ORDER BY nombreTipoMaquina ASC";
             return $this->conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
     }
@@ -43,7 +43,7 @@ class MaquinaInventarioCrearModelo {
             // Si se asignó a una bodega, registramos el movimiento de INGRESO
             if ($id_bodega !== null) {
                 $sqlMov = "INSERT INTO movimientos_maquinas (id_maquina, id_bodega_destino, tipo_movimiento, id_usuario_registra, observacion) 
-                           VALUES (:idMaq, :idBodegaDest, 'INGRESO', :idUser, 'Ingreso inicial al sistema')";
+                            VALUES (:idMaq, :idBodegaDest, 'INGRESO', :idUser, 'Ingreso inicial al sistema')";
                 $stmtMov = $this->conn->prepare($sqlMov);
                 $stmtMov->bindParam(':idMaq', $id_maquina, PDO::PARAM_INT);
                 $stmtMov->bindParam(':idBodegaDest', $id_bodega, PDO::PARAM_INT);

@@ -115,6 +115,7 @@
                         <select name="condicion" id="condicion" class="w-full select2-buscador" required>
                             <option value="nuevo" <?= (($datosRepuesto['condicion'] ?? '') === 'nuevo') ? 'selected' : '' ?>>NUEVO</option>
                             <option value="recuperado" <?= (($datosRepuesto['condicion'] ?? '') === 'recuperado') ? 'selected' : '' ?>>RECUPERADO</option>
+                            <option value="por revisar" <?= (($datosRepuesto['condicion'] ?? '') === 'por revisar') ? 'selected' : '' ?>>POR REVISAR</option>
                         </select>
                     </div>
                 </div>

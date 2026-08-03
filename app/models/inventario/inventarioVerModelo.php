@@ -1,7 +1,8 @@
 <?php
 // app/models/inventario/inventarioVerModelo.php
 
-if (!defined('ENTRADA_PRINCIPAL')) die("Acceso denegado.");
+if (!defined('ENTRADA_PRINCIPAL'))
+    die("Acceso denegado.");
 
 class InventarioVerModelo
 {
@@ -38,6 +39,37 @@ class InventarioVerModelo
         } catch (PDOException $e) {
             error_log("Error al obtener inventario: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function actualizarStockManual($id_stock, $nueva_cantidad)
+    {
+        try {
+            $sql = "UPDATE inventario_stock SET cantidad_total = :cantidad WHERE id_stock = :id_stock";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':cantidad', $nueva_cantidad, PDO::PARAM_INT);
+            $stmt->bindParam(':id_stock', $id_stock, PDO::PARAM_INT);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error al actualizar stock manual: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Elimina un registro puntual de inventario_stock (no toca repuestos/productos ni el historial
+    // de movimientos_inventario, así que no debería chocar con llaves foráneas). Sirve para "limpiar"
+    // registros cargados por error y poder volver a ingresarlos bien después.
+    public function eliminarStock($id_stock)
+    {
+        try {
+            $sql = "DELETE FROM inventario_stock WHERE id_stock = :id_stock";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindParam(':id_stock', $id_stock, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error al eliminar stock: " . $e->getMessage());
+            return false;
         }
     }
 }

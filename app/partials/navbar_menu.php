@@ -83,6 +83,14 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
                 <i class="fa-solid fa-list-ul w-5 text-center mr-1 text-blue-500"></i> Gestionar Repuestos
             </a>
+            <a href="<?= BASE_URL ?>repuestoFormulaVer"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-list-ul w-5 text-center mr-1 text-blue-500"></i> Gestionar Fórmulas
+            </a>
+            <a href="<?= BASE_URL ?>repuestoEnsamblar"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-list-ul w-5 text-center mr-1 text-blue-500"></i> Ensamblar Repuestos
+            </a>
         </div>
     </div>
 
@@ -118,6 +126,16 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
             <a href="<?= BASE_URL ?>inventarioVer"
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
                 <i class="fa-solid fa-warehouse w-5 text-center mr-1 text-yellow-500"></i> Inventario Almacén
+            </a>
+
+            <a href="<?= BASE_URL ?>bodegaVer"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-warehouse w-5 text-center mr-1 text-yellow-500"></i> Administrar Bodegas
+            </a>
+
+            <a href="<?= BASE_URL ?>maquinaInventarioVer"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-warehouse w-5 text-center mr-1 text-yellow-500"></i> Inventario Bodega
             </a>
         </div>
     </div>

@@ -10,10 +10,14 @@ class EntradaSalidaVerModelo {
 
     public function obtenerTodosLosMovimientos() {
         try {
-            // Hacemos LEFT JOIN porque id_repuesto puede ser nulo si lo escribieron manual
-            $sql = "SELECT m.*, r.nombre_repuesto, r.codigo_referencia, u.nombre as nombre_usuario
+            // Agregamos el LEFT JOIN para la tabla productos
+            $sql = "SELECT m.*, 
+                            r.nombre_repuesto, r.codigo_referencia, 
+                            p.nombre_producto, p.codigo_interno,
+                            u.nombre as nombre_usuario
                     FROM movimientos_inventario m
                     LEFT JOIN repuestos r ON m.id_repuesto = r.id_repuesto
+                    LEFT JOIN productos p ON m.id_producto = p.id_producto
                     LEFT JOIN usuarios u ON m.id_usuario_registra = u.usuario_id
                     ORDER BY m.fecha_movimiento DESC";
             $stmt = $this->conn->prepare($sql);

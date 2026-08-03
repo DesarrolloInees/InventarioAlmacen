@@ -38,7 +38,7 @@ $m = $data['maquina'];
                         <option value="">-- Seleccione un tipo --</option>
                         <?php foreach ($data['tipos'] as $t): ?>
                             <option value="<?= $t['idTipoMaquina'] ?>" <?= $m['idTipoMaquina'] == $t['idTipoMaquina'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($t['nombre_tipo']) ?>
+                                <?= htmlspecialchars($t['nombreTipoMaquina']) ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

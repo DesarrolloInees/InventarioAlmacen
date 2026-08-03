@@ -158,18 +158,24 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
                                 <td class="py-4 px-4">
                                     <?php if (!empty($s['id_repuesto'])): ?>
                                         <span class="font-bold text-blue-600 dark:text-blue-400"><i
-                                                class="fas fa-tools mr-1"></i><?= htmlspecialchars($s['nombre_repuesto']) ?></span>
+                                                class="fas fa-tools mr-1"></i><?= htmlspecialchars($s['nombre_repuesto'] ?? '') ?></span>
                                         <div class="text-[11px] text-gray-400 mt-0.5">
                                             <span>Cod: <?= htmlspecialchars($s['codigo_referencia'] ?: 'S/C') ?></span> •
                                             <span
-                                                class="font-bold uppercase text-gray-500 dark:text-gray-300"><?= htmlspecialchars($s['condicion']) ?></span>
+                                                class="font-bold uppercase text-gray-500 dark:text-gray-300"><?= htmlspecialchars($s['condicion'] ?? '') ?></span>
                                         </div>
-                                    <?php else: ?>
+                                    <?php elseif (!empty($s['id_producto'])): ?>
                                         <span class="font-bold text-purple-600 dark:text-purple-400"><i
-                                                class="fas fa-soap mr-1"></i><?= htmlspecialchars($s['nombre_producto']) ?></span>
+                                                class="fas fa-soap mr-1"></i><?= htmlspecialchars($s['nombre_producto'] ?? '') ?></span>
                                         <div class="text-[11px] text-gray-400 mt-0.5">
                                             <span>Cod Interno: <?= htmlspecialchars($s['codigo_interno'] ?: 'S/C') ?></span> •
                                             <span class="italic text-purple-400">Consumible</span>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="font-bold text-orange-600 dark:text-orange-400"><i
+                                                class="fas fa-pen mr-1"></i><?= htmlspecialchars($s['repuesto_manual'] ?? 'Ítem Manual') ?></span>
+                                        <div class="text-[11px] text-gray-400 mt-0.5">
+                                            <span class="italic text-orange-400">Ingreso Manual / Sin Catálogo</span>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -180,10 +186,35 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
                                 </td>
 
                                 <!-- Técnico / Destino -->
-                                <td class="py-4 px-4 font-bold text-indigo-700 dark:text-indigo-400">
-                                    <?= htmlspecialchars($s['tecnico_nombre'] ?? 'Desconocido') ?>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400 font-normal mt-1 leading-tight">
-                                        <?= htmlspecialchars($s['observacion']) ?>
+                                <td class="py-4 px-4">
+                                    <?php if (!empty($s['tecnico_nombre'])): ?>
+                                        <span class="font-bold text-indigo-700 dark:text-indigo-400">
+                                            <i class="fas fa-user-wrench mr-1 text-xs"></i>
+                                            <?= htmlspecialchars($s['tecnico_nombre']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="font-bold text-gray-600 dark:text-gray-400">
+                                            <i class="fas fa-building mr-1 text-xs"></i> Salida General (Sin Técnico)
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($s['destino'])): ?>
+                                        <div class="text-xs text-gray-700 dark:text-gray-300 font-semibold mt-1">
+                                            Destino: <?= htmlspecialchars($s['destino']) ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($s['numero_remision']) || !empty($s['numero_cotizacion'])): ?>
+                                        <div
+                                            class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 font-mono bg-gray-100 dark:bg-gray-700 inline-block px-1 rounded">
+                                            <?= !empty($s['numero_remision']) ? 'Rem: ' . htmlspecialchars($s['numero_remision']) : '' ?>
+                                            <?= (!empty($s['numero_remision']) && !empty($s['numero_cotizacion'])) ? ' | ' : '' ?>
+                                            <?= !empty($s['numero_cotizacion']) ? 'Cot: ' . htmlspecialchars($s['numero_cotizacion']) : '' ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div class="text-[11px] text-gray-400 font-normal mt-1 leading-tight italic">
+                                        <?= htmlspecialchars($s['observacion'] ?? '') ?>
                                     </div>
                                 </td>
 
@@ -284,16 +315,34 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
     function exportarExcel() {
         if (listaSalidas.length === 0) return alert("No hay datos");
         const datosExcel = listaSalidas.map(s => {
-            let esRepuesto = (s.id_repuesto != null);
+            let tipoArticulo = "MANUAL";
+            let nombreArticulo = s.repuesto_manual || "N/A";
+            let codigoArticulo = "N/A";
+            let condicionArticulo = "N/A";
+
+            if (s.id_repuesto != null) {
+                tipoArticulo = "REPUESTO";
+                nombreArticulo = s.nombre_repuesto;
+                codigoArticulo = s.codigo_referencia;
+                condicionArticulo = s.condicion ? s.condicion.toUpperCase() : "N/A";
+            } else if (s.id_producto != null) {
+                tipoArticulo = "CONSUMIBLE";
+                nombreArticulo = s.nombre_producto;
+                codigoArticulo = s.codigo_interno;
+            }
+
             return {
                 "Fecha": s.fecha_movimiento,
-                "Tipo de Artículo": esRepuesto ? "REPUESTO" : "CONSUMIBLE",
-                "Código": esRepuesto ? s.codigo_referencia : s.codigo_interno,
-                "Nombre Artículo": esRepuesto ? s.nombre_repuesto : s.nombre_producto,
-                "Condición": esRepuesto ? s.condicion.toUpperCase() : "N/A",
-                "Cantidad Asignada": parseInt(s.cantidad),
-                "Técnico Destino": s.tecnico_nombre || 'Desconocido',
-                "Observación": s.observacion,
+                "Tipo": tipoArticulo,
+                "Código": codigoArticulo,
+                "Artículo": nombreArticulo,
+                "Condición": condicionArticulo,
+                "Cant.": parseInt(s.cantidad),
+                "Entregado a": s.tecnico_nombre || 'SALIDA GENERAL',
+                "Destino Específico": s.destino || 'N/A',
+                "Nº Remisión": s.numero_remision || 'N/A',
+                "Nº Cotización": s.numero_cotizacion || 'N/A',
+                "Observación": s.observacion || 'N/A',
                 "Registrado Por": s.admin_nombre
             };
         });

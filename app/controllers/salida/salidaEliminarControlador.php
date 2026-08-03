@@ -34,7 +34,7 @@ class salidaEliminarControlador
             $resultado = $this->modelo->anularSalida($id);
             
             if ($resultado === true) {
-                $_SESSION['exito_eliminar'] = "Asignación anulada correctamente. Los repuestos han sido devueltos a tu almacén local.";
+                $_SESSION['exito_eliminar'] = "Asignación anulada correctamente. El stock ha sido devuelto a tu almacén.";
             } else {
                 $_SESSION['error_eliminar'] = "Error interno al intentar anular la salida.";
             }

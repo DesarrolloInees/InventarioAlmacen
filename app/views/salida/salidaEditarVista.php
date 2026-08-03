@@ -4,7 +4,8 @@ if (!defined('ENTRADA_PRINCIPAL'))
     die("Acceso denegado.");
 
 // Detectamos si es motorizado para mostrar la alerta
-$esMotorizado = strpos(strtolower($datosSalida['observacion']), 'motorizado') !== false;
+// Reemplaza la línea 7 actual por esta:
+$esMotorizado = strpos(strtolower($datosSalida['observacion'] ?? ''), 'motorizado') !== false;
 ?>
 
 <div class="w-full max-w-4xl mx-auto px-4 md:px-6">
@@ -49,28 +50,41 @@ $esMotorizado = strpos(strtolower($datosSalida['observacion']), 'motorizado') !=
                 <!-- Técnico (Solo Lectura) -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
-                        Técnico Destino (No modificable)
+                        Técnico / Destino (No modificable)
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i
-                                class="fas fa-user-wrench text-gray-400"></i></div>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i
+                                class="fas <?= !empty($datosSalida['tecnico_nombre']) ? 'fa-user-wrench' : 'fa-building' ?> text-gray-400"></i>
+                        </div>
                         <input type="text" readonly disabled
-                            value="<?= htmlspecialchars($datosSalida['tecnico_nombre'] ?? 'Desconocido') ?>"
-                            class="pl-10 mt-1 block w-full px-3 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed">
+                            value="<?= htmlspecialchars($datosSalida['tecnico_nombre'] ?: 'Salida General (Sin Técnico)') ?>"
+                            class="pl-10 mt-1 block w-full px-3 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed font-bold">
                     </div>
                 </div>
 
                 <!-- Repuesto (Solo Lectura) -->
+                <!-- Artículo (Solo Lectura) -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
-                        Repuesto (No modificable)
+                        Artículo Entregado (No modificable)
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i
-                                class="fas fa-box text-gray-400"></i></div>
-                        <input type="text" readonly disabled
-                            value="[<?= htmlspecialchars($datosSalida['codigo_referencia'] ?? '') ?>] <?= htmlspecialchars($datosSalida['nombre_repuesto']) ?>"
-                            class="pl-10 mt-1 block w-full px-3 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed truncate">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-box-open text-gray-400"></i>
+                        </div>
+                        <?php
+                        $nombreArticulo = '';
+                        if (!empty($datosSalida['nombre_repuesto'])) {
+                            $nombreArticulo = "[REP] " . ($datosSalida['codigo_referencia'] ?: 'S/C') . " - " . $datosSalida['nombre_repuesto'];
+                        } elseif (!empty($datosSalida['nombre_producto'])) {
+                            $nombreArticulo = "[CONS] " . ($datosSalida['codigo_interno'] ?: 'S/C') . " - " . $datosSalida['nombre_producto'];
+                        } else {
+                            $nombreArticulo = "[MANUAL] " . ($datosSalida['repuesto_manual'] ?? 'Ítem Desconocido');
+                        }
+                        ?>
+                        <input type="text" readonly disabled value="<?= htmlspecialchars($nombreArticulo) ?>"
+                            class="pl-10 mt-1 block w-full px-3 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed truncate font-bold">
                     </div>
                 </div>
 
@@ -86,6 +100,39 @@ $esMotorizado = strpos(strtolower($datosSalida['observacion']), 'motorizado') !=
                             value="<?= htmlspecialchars($datosSalida['cantidad'] ?? '') ?>"
                             class="pl-10 mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-lg font-bold">
                     </div>
+                </div>
+
+                <!-- Nuevos Datos Globales -->
+                <div>
+                    <label for="destino"
+                        class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Destino</label>
+                    <input type="text" id="destino" name="destino"
+                        value="<?= htmlspecialchars($datosSalida['destino'] ?? '') ?>"
+                        class="mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
+                </div>
+
+                <div>
+                    <label for="numero_remision"
+                        class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nº Remisión</label>
+                    <input type="text" id="numero_remision" name="numero_remision"
+                        value="<?= htmlspecialchars($datosSalida['numero_remision'] ?? '') ?>"
+                        class="mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
+                </div>
+
+                <div>
+                    <label for="numero_cotizacion"
+                        class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nº Cotización</label>
+                    <input type="text" id="numero_cotizacion" name="numero_cotizacion"
+                        value="<?= htmlspecialchars($datosSalida['numero_cotizacion'] ?? '') ?>"
+                        class="mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
+                </div>
+
+                <div>
+                    <label for="novedad"
+                        class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Novedad</label>
+                    <input type="text" id="novedad" name="novedad"
+                        value="<?= htmlspecialchars($datosSalida['novedad'] ?? '') ?>"
+                        class="mt-1 block w-full px-3 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-yellow-500 focus:border-yellow-500">
                 </div>
 
                 <!-- Observación Editable -->

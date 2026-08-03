@@ -36,7 +36,7 @@ if (!defined('ENTRADA_PRINCIPAL')) die("Acceso denegado.");
                     <select name="idTipoMaquina" id="idTipoMaquina" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="">-- Seleccione un tipo --</option>
                         <?php foreach ($data['tipos'] as $t): ?>
-                            <option value="<?= $t['idTipoMaquina'] ?>"><?= htmlspecialchars($t['nombre_tipo']) ?></option>
+                            <option value="<?= $t['idTipoMaquina'] ?>"><?= htmlspecialchars($t['nombreTipoMaquina']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

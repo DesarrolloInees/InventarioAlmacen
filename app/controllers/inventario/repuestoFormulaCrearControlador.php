@@ -15,54 +15,59 @@ class repuestoFormulaCrearControlador
         $this->modelo = new RepuestoFormulaCrearModelo($this->db);
     }
 
-    // Configuración de cabeceras CORS (Indispensable para que Angular pueda consultar a PHP)
-    private function setHeaders() {
-        header("Access-Control-Allow-Origin: *"); // En producción, limita esto al puerto de tu Angular (ej: http://localhost:4200)
-        header("Content-Type: application/json; charset=UTF-8");
-        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-        header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
-        
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            http_response_code(200);
-            exit();
-        }
-    }
-
     public function index()
     {
-        $this->setHeaders();
+        // 1. Obtenemos los repuestos para llenar los <select> de la vista
+        $repuestos = $this->modelo->obtenerTodosRepuestos();
+        $error = null;
 
-        // 1. PETICIÓN GET: Devolver la lista de repuestos
-        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $repuestos = $this->modelo->obtenerTodosRepuestos();
-            echo json_encode($repuestos);
-            exit();
-        }
-
-        // 2. PETICIÓN POST: Guardar la nueva fórmula
+        // 2. Si el usuario envía el formulario (POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Capturar el cuerpo JSON enviado por Angular
-            $json = file_get_contents('php://input');
-            $data = json_decode($json, true);
+            
+            $id_padre = $_POST['id_repuesto_padre'] ?? '';
+            
+            // Recibimos los arreglos que vienen de los inputs con name="componentes[]" y "cantidades[]"
+            $componentes_post = $_POST['componentes'] ?? [];
+            $cantidades_post = $_POST['cantidades'] ?? [];
+            
+            $insumos = [];
 
-            $id_padre = $data['id_repuesto_padre'] ?? '';
-            $insumos = $data['insumos'] ?? [];
+            // Transformamos esos arreglos al formato que espera tu modelo
+            if (!empty($componentes_post)) {
+                foreach ($componentes_post as $index => $id_hijo) {
+                    if (!empty($id_hijo)) {
+                        $insumos[] = [
+                            'id_repuesto_hijo' => $id_hijo,
+                            'cantidad' => $cantidades_post[$index] ?? 1
+                        ];
+                    }
+                }
+            }
 
+            // Validamos y guardamos
             if (!empty($id_padre) && !empty($insumos)) {
                 $resultado = $this->modelo->guardarFormula($id_padre, $insumos);
                 
                 if ($resultado === true) {
-                    http_response_code(201); // Created
-                    echo json_encode(["status" => "success", "message" => "Fórmula registrada con éxito"]);
+                    // Si guarda bien, redireccionamos a la tabla de ver fórmulas
+                    header('Location: ' . BASE_URL . 'repuestoFormulaVer');
+                    exit();
                 } else {
-                    http_response_code(400); // Bad Request
-                    echo json_encode(["status" => "error", "message" => $resultado]);
+                    $error = $resultado; // Mensaje de error (ej: fórmula duplicada)
                 }
             } else {
-                http_response_code(400);
-                echo json_encode(["status" => "error", "message" => "Datos incompletos. Debe seleccionar el repuesto padre y al menos un componente."]);
+                $error = "Debe seleccionar el repuesto padre y al menos un componente válido.";
             }
-            exit();
         }
+
+        // 3. Preparamos la data y cargamos la vista HTML (Ya no devolvemos JSON)
+        $data = [
+            'titulo' => 'Estructurar Nueva Fórmula',
+            'repuestos' => $repuestos,
+            'error' => $error
+        ];
+
+        $vistaContenido = "app/views/inventario/repuestoFormulaCrearVista.php";
+        include "app/views/plantillaVista.php";
     }
 }

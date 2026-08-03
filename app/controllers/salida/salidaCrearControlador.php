@@ -32,53 +32,62 @@ class salidaCrearControlador
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['items'])) {
-            $idTecnico = $_POST['id_tecnico'];
-            $tipoAsignacion = $_POST['tipo_asignacion'];
+            $idTecnico = $_POST['id_tecnico'] ?? null;
+            $tipoAsignacion = $_POST['tipo_asignacion'] ?? 'interno';
             $items = json_decode($_POST['items'], true);
+            
+            // Recibimos los datos globales
+            $datosGlobales = [
+                'destino' => $_POST['destino'] ?? null,
+                'remision' => $_POST['remision'] ?? null,
+                'cotizacion' => $_POST['cotizacion'] ?? null,
+                'novedad' => $_POST['novedad'] ?? null,
+            ];
 
-            // 1. PROCESAR LA SALIDA DE INVENTARIO
-            $res = $this->modelo->procesarSalidaMultiple($idTecnico, $items, $idAdmin, $tipoAsignacion);
-            
-            // --- LOG DE SEGUIMIENTO 1 ---
-            error_log("[GATILLO SEGUIMIENTO] 1. Salida procesada. Resultado del modelo: " . json_encode($res));
-            
-            // Evaluamos de forma flexible si el resultado es exitoso (por si viene como true, 1 o estatus)
-            $esSalidaExitosa = false;
-            if ($res === true || (is_array($res) && isset($res['exito']) && ($res['exito'] === true || $res['exito'] == 1 || $res['exito'] === 'true'))); {
-                $esSalidaExitosa = true;
+            if (!is_array($items) || count($items) === 0) {
+                echo json_encode(['exito' => false, 'msg' => 'No se recibieron ítems para procesar.']);
+                exit();
             }
 
+            // Pasamos los globales al modelo
+            $res = $this->modelo->procesarMovimientoMultiple($idTecnico, $items, $idAdmin, $tipoAsignacion, $datosGlobales);
+
+            // --- LOG DE SEGUIMIENTO 1 ---
+            error_log("[GATILLO SEGUIMIENTO] 1. Movimiento procesado. Resultado del modelo: " . json_encode($res));
+
+            $esExitoso = is_array($res) && isset($res['exito']) && $res['exito'] === true;
+
             // ======================================================================
-            // 2. GATILLO CRÚDO (SIN BLINDAJE PARA PRUEBAS)
+            // 2. GATILLO DE ALERTAS DE STOCK CRÍTICO
             // ======================================================================
-            if ($esSalidaExitosa) {
+            if ($esExitoso) {
                 try {
                     require_once __DIR__ . '/../../models/notificacion/notificacionInventarioModelo.php';
                     $alertasMod = new NotificacionInventarioModelo($this->db);
                     $hayCriticos = $alertasMod->obtenerStockCritico(ALERTAS_UMBRAL_STOCK_CRITICO);
-                    
+
                     if (!empty($hayCriticos)) {
                         require_once __DIR__ . '/../notificacion/notificacionInventarioControlador.php';
                         $notificador = new NotificacionInventarioControlador();
                         $notificador->procesarNotificacionesStock(true);
                     }
                 } catch (\Throwable $t) {
-                    // Si el correo o la alerta falla, te mandará un SweetAlert con el error exacto
                     echo json_encode(['exito' => false, 'msg' => "🚨 ERROR EN ALERTAS: " . $t->getMessage() . " | Línea: " . $t->getLine()]);
-                    exit(); 
+                    exit();
                 }
             }
             // ======================================================================
 
-            // 3. RESPONDER INSTANTÁNEAMENTE A LA VISTA
+            // 3. RESPONDER A LA VISTA
             echo json_encode($res);
             exit();
         }
 
         $data = [
-            'titulo' => 'Despacho y Asignaciones de Almacén',
+            'titulo' => 'Movimientos de Almacén',
             'tecnicos' => $this->modelo->obtenerTecnicos(),
-            'inventario' => $this->modelo->obtenerInventarioDisponible()
+            'inventario' => $this->modelo->obtenerInventarioDisponible(), // para SALIDA (con stock)
+            'catalogo' => $this->modelo->obtenerCatalogoCompleto()        // para ENTRADA (todo el catálogo)
         ];
 
         $vistaContenido = "app/views/salida/salidaCrearVista.php";

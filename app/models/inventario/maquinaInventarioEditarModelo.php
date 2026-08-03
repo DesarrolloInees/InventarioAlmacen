@@ -20,7 +20,7 @@ class MaquinaInventarioEditarModelo {
 
     public function obtenerTiposMaquina() {
         try {
-            $sql = "SELECT idTipoMaquina, nombre_tipo FROM tipomaquina ORDER BY nombre_tipo ASC";
+            $sql = "SELECT idTipoMaquina, nombreTipoMaquina FROM tipomaquina ORDER BY nombreTipoMaquina ASC";
             return $this->conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
     }

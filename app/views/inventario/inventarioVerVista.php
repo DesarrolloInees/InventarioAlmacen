@@ -171,6 +171,9 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
                             <th class="py-3 px-4 text-center">Stock Actual</th>
                             <th class="py-3 px-4 text-right">Valor Unitario</th>
                             <th class="py-3 px-4 text-right">Total Dinero</th>
+                            <?php if ($esAdmin): ?>
+                                <th class="py-3 px-4 text-center">Acciones</th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -229,6 +232,23 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
                                 <td class="py-4 px-4 text-right font-mono font-bold text-gray-900 dark:text-white">
                                     $ <?= number_format($totalFila, 2) ?>
                                 </td>
+
+                                <?php if ($esAdmin): ?>
+                                    <td class="py-4 px-4 text-center whitespace-nowrap">
+                                        <button
+                                            onclick="abrirModalStock(<?= $i['id_stock'] ?>, '<?= htmlspecialchars(addslashes($nombre)) ?>', <?= $i['cantidad_total'] ?>)"
+                                            class="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition shadow-sm mr-1"
+                                            title="Ajustar Stock">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button
+                                            onclick="confirmarEliminarStock(<?= $i['id_stock'] ?>, '<?= htmlspecialchars(addslashes($nombre)) ?>')"
+                                            class="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition shadow-sm"
+                                            title="Eliminar del inventario">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -242,6 +262,49 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
                     a poblar el inventario.</p>
             </div>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- Modal para Ajuste Manual de Stock -->
+<div id="modalAjusteStock"
+    class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full overflow-hidden transform transition-all">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ajuste Manual de Stock</h3>
+            <button onclick="cerrarModalStock()" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="formAjusteStock" onsubmit="guardarStockManual(event)">
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="ajuste_id_stock" name="id_stock">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Artículo</label>
+                    <input type="text" id="ajuste_nombre" disabled
+                        class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 text-gray-700 dark:text-gray-300">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nueva Cantidad
+                        Total</label>
+                    <input type="number" id="ajuste_cantidad" name="nueva_cantidad" min="0" required
+                        class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 flex justify-end gap-3 rounded-b-2xl">
+                <button type="button" onclick="cerrarModalStock()"
+                    class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 font-bold">
+                    Guardar Ajuste
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -282,4 +345,83 @@ $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] 
             dom: '<"flex flex-wrap justify-between items-center mb-4"lf>rt<"flex flex-wrap justify-between items-center mt-4"ip>'
         });
     });
+
+
+    // --- Funciones para el Modal de Ajuste de Stock ---
+    function abrirModalStock(id_stock, nombre, cantidadActual) {
+        document.getElementById('ajuste_id_stock').value = id_stock;
+        document.getElementById('ajuste_nombre').value = nombre;
+        document.getElementById('ajuste_cantidad').value = cantidadActual;
+
+        document.getElementById('modalAjusteStock').classList.remove('hidden');
+    }
+
+    function cerrarModalStock() {
+        document.getElementById('modalAjusteStock').classList.add('hidden');
+        document.getElementById('formAjusteStock').reset();
+    }
+
+    async function guardarStockManual(e) {
+        e.preventDefault();
+
+        const id_stock = document.getElementById('ajuste_id_stock').value;
+        const nueva_cantidad = document.getElementById('ajuste_cantidad').value;
+
+        const formData = new FormData();
+        formData.append('id_stock', id_stock);
+        formData.append('nueva_cantidad', nueva_cantidad);
+        formData.append('accion', 'actualizarStockAjax');
+
+        try {
+            const response = await fetch('<?= BASE_URL ?>inventarioVer', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Stock actualizado con éxito.');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ocurrió un error de conexión al actualizar el stock.');
+        }
+    }
+
+    // --- Eliminar un ítem del inventario (para corregir cargas erróneas) ---
+    function confirmarEliminarStock(id_stock, nombre) {
+        const ok = confirm('¿Seguro que quieres eliminar "' + nombre + '" del inventario?\nEsto no borra el historial de movimientos, solo el registro de stock actual. Podrás volver a ingresarlo después.');
+        if (ok) {
+            eliminarStock(id_stock);
+        }
+    }
+
+    async function eliminarStock(id_stock) {
+        const formData = new FormData();
+        formData.append('id_stock', id_stock);
+        formData.append('accion', 'eliminarStockAjax');
+
+        try {
+            const response = await fetch('<?= BASE_URL ?>inventarioVer', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Ítem eliminado correctamente.');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Ocurrió un error de conexión al eliminar el ítem.');
+        }
+    }
 </script>
