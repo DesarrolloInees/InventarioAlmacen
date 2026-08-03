@@ -20,7 +20,7 @@ define('ALERTAS_SMTP_SECURE', 'ssl');
 
 define('ALERTAS_REMITENTE_EMAIL', 'ineesmensajesautomaticos@gmail.com');
 define('ALERTAS_REMITENTE_NOMBRE', 'Alertas I-Nexis Almacén');
-define('ALERTAS_CORREO_DESTINO', 'supervisorsat@inees.co; laboratorio@inees.co');
+define('ALERTAS_CORREO_DESTINO', 'supervisorsat@inees.co; laboratorio@inees.co; almacen@inees.co; desarrollo@inees.co');
 
 /* =========================================================
     3. CONFIGURACIÓN DE WHATSAPP (CALLMEBOT)
@@ -32,5 +32,5 @@ define('ALERTAS_WHATSAPP_APIKEY', '');
     4. REGLAS DE NEGOCIO DEL ALMACÉN
 ========================================================= */
 define('ALERTAS_UMBRAL_STOCK_CRITICO', 10); 
-define('ALERTAS_MODO_PRUEBA', true); 
+define('ALERTAS_MODO_PRUEBA', false); 
 define('ALERTAS_CORREO_PRUEBAS', 'aquilesbedoya37@gmail.com');
