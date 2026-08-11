@@ -1,5 +1,5 @@
 <?php if (!defined('ENTRADA_PRINCIPAL'))
-    die("Acceso denegado."); 
+    die("Acceso denegado.");
 
 // ==============================================================================
 // MAPA DE CIUDADES (Sin tocar la Base de Datos)
@@ -35,7 +35,7 @@ $ciudadesMotorizados = [
 
     /* FIX: Color del texto al escribir en el buscador de Select2 (Modo Claro) */
     .select2-search__field {
-        color: #1f2937 !important; 
+        color: #1f2937 !important;
         outline: none !important;
     }
 
@@ -82,17 +82,17 @@ $ciudadesMotorizados = [
                     <select id="id_tecnico" class="w-full p-2 border rounded-lg dark:bg-gray-800 dark:text-white">
                         <option value="">-- Sin Técnico (Salida General) --</option>
                         <?php foreach ($data['tecnicos'] as $t): ?>
-                            <?php 
-                                // Lógica para agregar la ciudad si es motorizado
-                                $textoCiudad = "";
-                                if (strpos($t['usuario_id'], 'moto_') === 0) {
-                                    // Quitamos el prefijo 'moto_' para que coincida con tus IDs numéricos (4, 6, 12...)
-                                    $idLimpio = str_replace('moto_', '', $t['usuario_id']);
-                                    
-                                    $textoCiudad = isset($ciudadesMotorizados[$idLimpio]) 
-                                        ? ' - ' . $ciudadesMotorizados[$idLimpio] 
-                                        : ' - Ciudad N/A';
-                                }
+                            <?php
+                            // Lógica para agregar la ciudad si es motorizado
+                            $textoCiudad = "";
+                            if (strpos($t['usuario_id'], 'moto_') === 0) {
+                                // Quitamos el prefijo 'moto_' para que coincida con tus IDs numéricos (4, 6, 12...)
+                                $idLimpio = str_replace('moto_', '', $t['usuario_id']);
+
+                                $textoCiudad = isset($ciudadesMotorizados[$idLimpio])
+                                    ? ' - ' . $ciudadesMotorizados[$idLimpio]
+                                    : ' - Ciudad N/A';
+                            }
                             ?>
                             <option value="<?= $t['usuario_id'] ?>">
                                 <?= htmlspecialchars($t['nombre']) ?> (<?= $t['cargo'] ?><?= $textoCiudad ?>)
@@ -173,6 +173,7 @@ $ciudadesMotorizados = [
                 <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 uppercase text-xs">
                     <tr>
                         <th class="p-3">Artículo / Clasificación</th>
+                        <th class="p-3">Novedad / Serial</th>
                         <th class="p-3 text-center">Cant.</th>
                         <th class="p-3 text-center">Acción</th>
                     </tr>
@@ -295,7 +296,14 @@ $ciudadesMotorizados = [
     }
 
     function agregarAlCarrito(item) {
-        let existe = item.id !== 'OTRO' ? carrito.find(x => x.id == item.id && x.tipo == item.tipo) : null;
+        item.novedad = item.novedad || '';
+
+        // Solo fusiona cantidad si ya existe el mismo ítem Y aún no tiene novedad/serial escrito.
+        // Si ya tiene novedad, se crea una fila nueva (para poder distinguir seriales).
+        let existe = item.id !== 'OTRO'
+            ? carrito.find(x => x.id == item.id && x.tipo == item.tipo && !x.novedad)
+            : null;
+
         if (existe) {
             if (existe.cantidad < item.stock) {
                 existe.cantidad++;
@@ -319,23 +327,32 @@ $ciudadesMotorizados = [
                     : `<span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.5 rounded uppercase">Consumible</span>`);
 
             html += `
-            <tr class="dark:text-gray-300">
-                <td class="p-3">
-                    <b>[${item.codigo || 'S/C'}]</b> ${item.nombre}<br>${etiqueta}
-                </td>
-                <td class="p-3 text-center">
-                    <input type="number" value="${item.cantidad}" min="1" max="${item.stock}" 
-                    onchange="actualizarCantidad(${index}, this.value)"
-                    class="w-16 p-1 border rounded text-center dark:bg-gray-800">
-                </td>
-                <td class="p-3 text-center">
-                    <button onclick="eliminarDelCarrito(${index})" class="text-red-500 hover:text-red-700">
-                        <i class="fas fa-times-circle text-lg"></i>
-                    </button>
-                </td>
-            </tr>`;
+        <tr class="dark:text-gray-300">
+            <td class="p-3">
+                <b>[${item.codigo || 'S/C'}]</b> ${item.nombre}<br>${etiqueta}
+            </td>
+            <td class="p-3">
+                <input type="text" value="${item.novedad || ''}" placeholder="Ej: Serial BV-1000..."
+                onchange="actualizarNovedad(${index}, this.value)"
+                class="w-full p-1 border rounded text-xs dark:bg-gray-800 dark:text-white">
+            </td>
+            <td class="p-3 text-center">
+                <input type="number" value="${item.cantidad}" min="1" max="${item.stock}" 
+                onchange="actualizarCantidad(${index}, this.value)"
+                class="w-16 p-1 border rounded text-center dark:bg-gray-800">
+            </td>
+            <td class="p-3 text-center">
+                <button onclick="eliminarDelCarrito(${index})" class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-times-circle text-lg"></i>
+                </button>
+            </td>
+        </tr>`;
         });
-        $('#carrito_body').html(html || '<tr><td colspan="3" class="p-10 text-center text-gray-400">Escanea o busca repuestos para comenzar...</td></tr>');
+        $('#carrito_body').html(html || '<tr><td colspan="4" class="p-10 text-center text-gray-400">Escanea o busca repuestos para comenzar...</td></tr>');
+    }
+
+    function actualizarNovedad(index, valor) {
+        carrito[index].novedad = valor;
     }
 
     function actualizarCantidad(index, valor) {

@@ -197,6 +197,7 @@ class SalidaCrearModelo
                 }
 
                 $observacionFinal = "Salida - Origen: " . ($origen === 'moto' ? 'motorizado' : 'interno');
+                $novedadItem = !empty($item['novedad']) ? trim($item['novedad']) : $novedad;
 
                 // INSERT CORREGIDO APUNTANDO A movimientos_inventario
                 $sqlMov = "INSERT INTO movimientos_inventario
@@ -217,7 +218,7 @@ class SalidaCrearModelo
                 $stmtM->bindValue(':destino', $destino);
                 $stmtM->bindValue(':remision', $remision);
                 $stmtM->bindValue(':cotizacion', $cotizacion);
-                $stmtM->bindValue(':novedad', $novedad);
+                $stmtM->bindValue(':novedad', $novedadItem);
                 $stmtM->bindValue(':obs', $observacionFinal);
                 $stmtM->bindValue(':ida', $idAdmin, PDO::PARAM_INT);
                 $stmtM->execute();
