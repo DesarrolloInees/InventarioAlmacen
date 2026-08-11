@@ -15,23 +15,26 @@ class SalidaCrearModelo
     {
         $listaFinal = [];
 
+        // 1. CARGAR TÉCNICOS LOCALES (Desde la nueva tabla)
         try {
-            $sql = "SELECT usuario_id, nombre, cargo FROM usuarios WHERE estado = 'activo' ORDER BY nombre ASC";
+            $sql = "SELECT id_tecnico_local, nombre_tecnico FROM tecnicos_locales WHERE estado = 1 ORDER BY nombre_tecnico ASC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             $locales = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($locales as $loc) {
                 $listaFinal[] = [
-                    'usuario_id' => 'local_' . $loc['usuario_id'],
-                    'nombre' => $loc['nombre'],
-                    'cargo' => 'Taller / ' . $loc['cargo']
+                    // Mantenemos el prefijo 'local_' para que la lógica de guardado siga funcionando perfecto
+                    'usuario_id' => 'local_' . $loc['id_tecnico_local'],
+                    'nombre' => $loc['nombre_tecnico'],
+                    'cargo' => 'Taller / Interno'
                 ];
             }
         } catch (PDOException $e) {
             error_log("Error cargando técnicos locales: " . $e->getMessage());
         }
 
+        // 2. CARGAR TÉCNICOS EXTERNOS / MOTORIZADOS (Se queda exactamente igual)
         try {
             $connMotos = new PDO("mysql:host=127.0.0.1;dbname=inees_mantenimientos;charset=utf8mb4", "root", "");
             $connMotos->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -228,8 +231,19 @@ class SalidaCrearModelo
                     $stmtRepMoto->execute([':codigo' => $codigoRef]);
                     $idRepuestoMoto = $stmtRepMoto->fetchColumn();
 
-                    if (!$idRepuestoMoto)
-                        throw new Exception("Repuesto [$codigoRef] no existe en App Motorizados.");
+                    // --- NUEVA LÓGICA: Si no existe, lo creamos automáticamente ---
+                    if (!$idRepuestoMoto) {
+                        $sqlInsertMoto = "INSERT INTO repuesto (nombre_repuesto, codigo_referencia) VALUES (:nombre, :codigo)";
+                        $stmtInsertMoto = $connMotos->prepare($sqlInsertMoto);
+                        // Usamos el nombre que viene del carrito. Los demás campos tomarán su DEFAULT (ej. valor_venta = 0.00)
+                        $stmtInsertMoto->execute([
+                            ':nombre' => $item['nombre'] ?? 'Repuesto Sin Nombre',
+                            ':codigo' => $codigoRef
+                        ]);
+                        // Capturamos el ID del repuesto recién creado en la otra base de datos
+                        $idRepuestoMoto = $connMotos->lastInsertId();
+                    }
+                    // -------------------------------------------------------------
 
                     $sqlMoto = "INSERT INTO inventario_tecnico (id_tecnico, id_repuesto, cantidad_actual) 
                                 VALUES (:idt, :idr, :cant) 

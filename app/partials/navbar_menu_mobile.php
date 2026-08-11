@@ -188,7 +188,7 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
         </details>
 
         <!-- Acordeón: Salidas Simulación -->
-        <details class="group mb-1">
+        <!--<details class="group mb-1">
             <summary
                 class="flex justify-between items-center cursor-pointer list-none text-gray-800 dark:text-gray-300 py-3 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg select-none transition-colors">
                 <span class="font-medium">
@@ -205,7 +205,7 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Salida Simulación
                 </a>
             </div>
-        </details>
+        </details>-->
     <?php endif; ?>
 
     <!-- Botón Cerrar Sesión Móvil -->

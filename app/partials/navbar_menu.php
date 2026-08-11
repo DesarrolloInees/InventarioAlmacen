@@ -204,7 +204,7 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
 
 
     <!-- Dropdown Salida Simulación -->
-    <div class="relative group h-full flex items-center ml-2">
+    <!--<div class="relative group h-full flex items-center ml-2">
         <button
             class="text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 group-hover:text-brand-600 dark:group-hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center transition">
             <span>Salidas Simulación</span>
@@ -220,5 +220,5 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white">Salida Simulación Ver
             </a>
         </div>
-    </div>
+    </div>-->
 <?php endif; ?>

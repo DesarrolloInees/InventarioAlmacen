@@ -47,48 +47,29 @@ class EntradaSalidaControlador
         if (!is_array($movimientosRaw))
             $movimientosRaw = [];
 
-        // Parseo de la observación (misma lógica que la vista con DataTables) y separación Entradas/Salidas
+        
+        // Parseo directo a las nuevas columnas y separación Entradas/Salidas
         $salidas = [];
         $entradas = [];
         $salidasFechasUnicas = [];
         $entradasFechasUnicas = [];
 
         foreach ($movimientosRaw as $mov) {
+            // 1. Determinar el nombre del artículo usando también la columna repuesto_manual
             if (!empty($mov['nombre_repuesto'])) {
                 $nombreArticulo = $mov['codigo_referencia'] . ' - ' . $mov['nombre_repuesto'];
             } elseif (!empty($mov['nombre_producto'])) {
                 $nombreArticulo = $mov['codigo_interno'] . ' - ' . $mov['nombre_producto'];
             } else {
-                $nombreArticulo = 'MANUAL';
+                // Si no está en catálogo, usamos el texto de la columna repuesto_manual
+                $nombreArticulo = !empty($mov['repuesto_manual']) ? $mov['repuesto_manual'] : 'MANUAL';
             }
 
-            $novedad = 'N/A';
-            $destino = 'N/A';
-            $remision = 'N/A';
-            $cotizacion = 'N/A';
-
-            $obs = $mov['observacion'] ?? '';
-
-            if (strpos($obs, 'Repuesto Manual:') !== false) {
-                $partesManual = explode(' | ', $obs, 2);
-                $nombreArticulo = trim(str_replace('Repuesto Manual:', '', $partesManual[0]));
-                $obs = count($partesManual) > 1 ? $partesManual[1] : '';
-            }
-
-            if (!empty($obs)) {
-                $partes = explode(' | ', $obs);
-                foreach ($partes as $parte) {
-                    if (strpos($parte, 'Novedad:') !== false) {
-                        $novedad = trim(str_replace('Novedad:', '', $parte));
-                    } elseif (strpos($parte, 'Destino:') !== false) {
-                        $destino = trim(str_replace('Destino:', '', $parte));
-                    } elseif (strpos($parte, 'Remisión:') !== false) {
-                        $remision = trim(str_replace('Remisión:', '', $parte));
-                    } elseif (strpos($parte, 'Cotización:') !== false) {
-                        $cotizacion = trim(str_replace('Cotización:', '', $parte));
-                    }
-                }
-            }
+            // 2. Extraer datos directamente de las nuevas columnas de la base de datos
+            $novedad = !empty($mov['novedad']) ? $mov['novedad'] : 'N/A';
+            $destino = !empty($mov['destino']) ? $mov['destino'] : 'N/A';
+            $remision = !empty($mov['numero_remision']) ? $mov['numero_remision'] : 'N/A';
+            $cotizacion = !empty($mov['numero_cotizacion']) ? $mov['numero_cotizacion'] : 'N/A';
 
             $fechaFormateada = date('d/m/Y', strtotime($mov['fecha_movimiento']));
 

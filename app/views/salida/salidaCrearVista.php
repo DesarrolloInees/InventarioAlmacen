@@ -1,5 +1,27 @@
 <?php if (!defined('ENTRADA_PRINCIPAL'))
-    die("Acceso denegado."); ?>
+    die("Acceso denegado."); 
+
+// ==============================================================================
+// MAPA DE CIUDADES (Sin tocar la Base de Datos)
+// Coloca aquí el ID del técnico motorizado (ej: moto_5) y la ciudad que le corresponde.
+// Si agregas un técnico nuevo en el futuro, solo lo sumas a esta lista.
+// ==============================================================================
+$ciudadesMotorizados = [
+    '4' => 'Bogotá',
+    '6' => 'Bogotá',
+    '12' => 'Bogotá',
+    '15' => 'Bogotá',
+    '16' => 'Bogotá',
+    '18' => 'Bogotá',
+    '7' => 'Medellin',
+    '8' => 'Medellin',
+    '9' => 'Cali',
+    '13' => 'Cali',
+    '10' => 'Barranquilla',
+    '11' => 'Barranquilla',
+    // 'moto_ID' => 'Ciudad'
+];
+?>
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
@@ -9,6 +31,12 @@
         height: 45px !important;
         display: flex;
         align-items: center;
+    }
+
+    /* FIX: Color del texto al escribir en el buscador de Select2 (Modo Claro) */
+    .select2-search__field {
+        color: #1f2937 !important; 
+        outline: none !important;
     }
 
     .dark .select2-container--default .select2-selection--single {
@@ -24,6 +52,13 @@
         background-color: #1f2937 !important;
         border-color: #4b5563 !important;
         color: white !important;
+    }
+
+    /* FIX: Color del texto y fondo al escribir en el buscador de Select2 (Modo Oscuro) */
+    .dark .select2-search__field {
+        background-color: #374151 !important;
+        color: #ffffff !important;
+        border: 1px solid #4b5563 !important;
     }
 </style>
 
@@ -47,8 +82,21 @@
                     <select id="id_tecnico" class="w-full p-2 border rounded-lg dark:bg-gray-800 dark:text-white">
                         <option value="">-- Sin Técnico (Salida General) --</option>
                         <?php foreach ($data['tecnicos'] as $t): ?>
-                            <option value="<?= $t['usuario_id'] ?>"><?= htmlspecialchars($t['nombre']) ?>
-                                (<?= $t['cargo'] ?>)</option>
+                            <?php 
+                                // Lógica para agregar la ciudad si es motorizado
+                                $textoCiudad = "";
+                                if (strpos($t['usuario_id'], 'moto_') === 0) {
+                                    // Quitamos el prefijo 'moto_' para que coincida con tus IDs numéricos (4, 6, 12...)
+                                    $idLimpio = str_replace('moto_', '', $t['usuario_id']);
+                                    
+                                    $textoCiudad = isset($ciudadesMotorizados[$idLimpio]) 
+                                        ? ' - ' . $ciudadesMotorizados[$idLimpio] 
+                                        : ' - Ciudad N/A';
+                                }
+                            ?>
+                            <option value="<?= $t['usuario_id'] ?>">
+                                <?= htmlspecialchars($t['nombre']) ?> (<?= $t['cargo'] ?><?= $textoCiudad ?>)
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -61,7 +109,7 @@
                     </select>
                 </div>
 
-                <!-- NUEVO BLOQUE: Datos Globales del Documento -->
+                <!-- Datos Globales del Documento -->
                 <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
                     <label class="block text-sm font-bold mb-3 text-gray-700 dark:text-gray-300">3. Datos de la
                         Salida</label>
@@ -119,7 +167,7 @@
     </div>
 
     <!-- TABLA DEL CARRITO -->
-    <div class="lg:col-span-2">
+    <div class="lg:col-span-2 mt-6 lg:mt-0">
         <div class="overflow-x-auto min-h-[300px]">
             <table class="w-full text-sm text-left border dark:border-gray-700">
                 <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 uppercase text-xs">
@@ -148,8 +196,6 @@
         </div>
     </div>
 </div>
-</div>
-</div>
 
 <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -159,7 +205,9 @@
     let carrito = [];
 
     $(document).ready(function () {
+        // Inicializamos ambos Select2
         $('#buscador_general').select2({ width: '100%' });
+        $('#id_tecnico').select2({ width: '100%' }); // <-- NUEVO: Select2 para Técnicos
 
         $('#buscador_general').on('select2:select', function (e) {
             let el = e.params.data.element.dataset;
@@ -222,16 +270,6 @@
             $('#grupo_stock').show();
             $('#grupo_catalogo').hide();
         }
-    }
-
-    // BORRAR ESTA FUNCIÓN COMPLETA
-    function leerCamposExtra() {
-        return {
-            destino: $('#tmp_destino').val() || null,
-            numero_remision: $('#tmp_remision').val() || null,
-            numero_cotizacion: $('#tmp_cotizacion').val() || null,
-            novedad: $('#tmp_novedad').val() || null
-        };
     }
 
     function agregarManual() {
@@ -323,7 +361,7 @@
     }
 
     function procesarSalida() {
-        let idTecnico = $('#id_tecnico').val(); // Si está en la opción por defecto, enviará ""
+        let idTecnico = $('#id_tecnico').val();
         if (carrito.length === 0) return Swal.fire('Error', 'El carrito está vacío.', 'error');
 
         $('#btn_procesar').prop('disabled', true).text('Procesando...');
