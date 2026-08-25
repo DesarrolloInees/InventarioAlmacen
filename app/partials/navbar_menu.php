@@ -141,6 +141,23 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
     </div>
 
 
+    <!-- Dropdown Logística -->
+    <div class="relative group h-full flex items-center ml-2">
+        <button
+            class="text-gray-600 dark:text-gray-300 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 group-hover:text-brand-600 dark:group-hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center transition">
+            <span>Movimientos</span>
+            <i class="fas fa-chevron-down ml-2 text-xs opacity-75"></i>
+        </button>
+        <div
+            class="absolute left-0 top-12 w-60 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden group-hover:block border border-gray-200 dark:border-gray-700 z-[9999]">
+            <a href="<?= BASE_URL ?>entradaSalida"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-left-right w-5 text-center mr-1 text-yellow-500"></i> Movimientos Inventario
+            </a>
+        </div>
+    </div>
+
+
 
     <!-- Dropdown Salida -->
     <div class="relative group h-full flex items-center ml-2">

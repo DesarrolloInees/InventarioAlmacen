@@ -46,15 +46,15 @@ class EntradaSalidaModelo
     // Listado completo de movimientos (con joins), filtrado por rango de fechas
     public function getMovimientos($fechaDesde = null, $fechaHasta = null)
     {
-        $sql = "SELECT m.*,
-                        r.nombre_repuesto, r.codigo_referencia,
-                        p.nombre_producto, p.codigo_interno,
-                        u.nombre as nombre_usuario
-                FROM movimientos_inventario m
-                LEFT JOIN repuestos r ON m.id_repuesto = r.id_repuesto
-                LEFT JOIN productos p ON m.id_producto = p.id_producto
-                LEFT JOIN usuarios u ON m.id_usuario_registra = u.usuario_id
-                WHERE 1=1";
+        $sql = "SELECT m.id_movimiento, m.*, 
+                    r.nombre_repuesto, r.codigo_referencia,
+                    p.nombre_producto, p.codigo_interno,
+                    u.nombre as nombre_usuario
+            FROM movimientos_inventario m
+            LEFT JOIN repuestos r ON m.id_repuesto = r.id_repuesto
+            LEFT JOIN productos p ON m.id_producto = p.id_producto
+            LEFT JOIN usuarios u ON m.id_usuario_registra = u.usuario_id
+            WHERE 1=1";
 
         if ($fechaDesde) {
             $sql .= " AND m.fecha_movimiento >= :fecha_desde";
@@ -77,4 +77,16 @@ class EntradaSalidaModelo
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function actualizarFechaMovimiento($idMovimiento, $nuevaFecha)
+{
+    $sql = "UPDATE movimientos_inventario 
+            SET fecha_movimiento = :fecha 
+            WHERE id_movimiento = :id";
+            
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':fecha', $nuevaFecha);
+    $stmt->bindParam(':id', $idMovimiento, PDO::PARAM_INT);
+    return $stmt->execute();
+}
 }
