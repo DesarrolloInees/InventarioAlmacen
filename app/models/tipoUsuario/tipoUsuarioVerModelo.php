@@ -13,7 +13,7 @@ class TipoUsuarioVerModelo
     public function obtenerTiposUsuario()
     {
         try {
-            $sql = "SELECT idTipoUsuario, nombreTipoUsuario FROM tipousuario ORDER BY idTipoUsuario ASC";
+            $sql = "SELECT idTipoUsuario, nombre_rol AS nombreTipoUsuario FROM tipousuario ORDER BY idTipoUsuario ASC";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -13,37 +13,49 @@ class LoginModelo
     public function authenticateUser($usuario, $password)
     {
         try {
-            // Seleccionamos todas las columnas de 'u' y el idTipoUsuario de 'ut'
-            $sql = "SELECT u.*, ut.idTipoUsuario 
-                    FROM usuarios u 
-                    INNER JOIN tipousuario ut ON u.nivel_acceso = ut.idTipoUsuario -- <-- CORREGIDO AQUÍ
-                    WHERE u.usuario = :usuario AND u.estado = 'activo'
+            $sql = "SELECT 
+                        u.*,
+                        ut.nombre_rol,
+                        COALESCE(u.idTipoUsuario, u.nivel_acceso) AS idTipoUsuario_res
+                    FROM usuarios u
+                    INNER JOIN tipousuario ut 
+                        ON COALESCE(u.idTipoUsuario, u.nivel_acceso) = ut.idTipoUsuario
+                    WHERE u.usuario = :usuario
                     LIMIT 1";
-
+    
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':usuario', $usuario);
             $stmt->execute();
+    
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            // Ahora sí debería existir $user['password_hash']
-            if ($user && isset($user['password_hash']) && password_verify($password, $user['password_hash'])) {
+    
+            if (
+                $user &&
+                isset($user['password_hash']) &&
+                password_verify($password, $user['password_hash'])
+            ) {
+                if ($user['estado'] === 'pendiente') {
+                    return [
+                        'status_bloqueado' => true,
+                        'message' => 'Tu solicitud de registro está en proceso de aprobación por el Super Administrador.'
+                    ];
+                }
+                if ($user['estado'] === 'inactivo') {
+                    return [
+                        'status_bloqueado' => true,
+                        'message' => 'Tu cuenta de usuario se encuentra inactiva.'
+                    ];
+                }
                 return $user;
-            } else {
-                return false;
             }
+    
+            return false;
+    
         } catch (PDOException $e) {
             error_log("Error de autenticación: " . $e->getMessage());
             return false;
         }
     }
-
-    /**
-     * Registra un nuevo acceso en la tabla de historial `login`.
-     * @param int $usuario_id El ID del usuario que inicia sesión.
-     * @param string $nombre_usuario El nombre del usuario que inicia sesión.
-     * @param string $ip La dirección IP del usuario.
-     * @return bool True si el registro es exitoso, false en caso de error.
-     */
     public function logAccess($usuario_id, $nombre_usuario, $ip)
     {
         try {
@@ -178,20 +190,19 @@ class LoginModelo
     /**
      * Guarda el código hasheado en la BD. Invalida los códigos viejos.
      */
-    public function guardarCodigoReset($email, $codigo_hash, $expiracion)
+    public function guardarCodigoReset($email, $codigo_hash, $expiracion = null)
     {
         // 1. Invalidar códigos viejos
-        // OJO: Tu tabla se llama 'password_reset' y la columna 'usuario_email'
         $stmt_invalidar = $this->conn->prepare("UPDATE password_reset SET usado = 1 WHERE usuario_email = :email");
         $stmt_invalidar->bindParam(':email', $email);
         $stmt_invalidar->execute();
 
-        // 2. Insertar nuevo
-        $sql = "INSERT INTO password_reset (usuario_email, codigo_hash, expira_en, usado) VALUES (:email, :hash, :expira, 0)";
+        // 2. Insertar nuevo con expiración exacta de 15 minutos en MySQL
+        $sql = "INSERT INTO password_reset (usuario_email, codigo_hash, expira_en, usado) 
+                VALUES (:email, :hash, DATE_ADD(NOW(), INTERVAL 15 MINUTE), 0)";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':email', $email);
         $stmt->bindParam(':hash', $codigo_hash);
-        $stmt->bindParam(':expira', $expiracion);
         return $stmt->execute();
     }
 
@@ -200,19 +211,15 @@ class LoginModelo
      */
     public function verificarCodigoReset($email, $codigo_enviado)
     {
-        // CORRECCIÓN VITAL: Usamos la hora de PHP, no la de MySQL
-        $ahora = date('Y-m-d H:i:s');
-
-        // Buscamos código no usado y que expire DESPUÉS de ahora
+        // Buscamos código no usado y que expire DESPUÉS del tiempo actual de MySQL NOW()
         $sql = "SELECT id, codigo_hash FROM password_reset 
                 WHERE usuario_email = :email 
                 AND usado = 0 
-                AND expira_en > :ahora 
+                AND expira_en > NOW() 
                 ORDER BY id DESC LIMIT 1";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':ahora', $ahora); // Enviamos hora PHP Bogotá
         $stmt->execute();
 
         $registro = $stmt->fetch(PDO::FETCH_ASSOC);

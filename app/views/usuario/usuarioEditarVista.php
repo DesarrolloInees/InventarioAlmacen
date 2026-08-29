@@ -47,20 +47,26 @@ $errores = $data['errores'] ?? [];
                             class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 transition-colors">
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+                        <input type="text" name="empresa" placeholder="Ej: Prosegur"
+                            value="<?php echo htmlspecialchars($usuario['empresa'] ?? ''); ?>"
+                            class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 transition-colors">
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
-                        <input type="text" name="cedula" required
-                            value="<?php echo htmlspecialchars($usuario['cedula']); ?>"
+                        <input type="text" name="cedula"
+                            value="<?php echo htmlspecialchars($usuario['cedula'] ?? ''); ?>"
                             class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 transition-colors">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cargo</label>
-                        <input type="text" name="cargo" required value="<?php echo htmlspecialchars($usuario['cargo']); ?>"
+                        <input type="text" name="cargo" value="<?php echo htmlspecialchars($usuario['cargo'] ?? ''); ?>"
                             class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 transition-colors">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Celular</label>
-                        <input type="tel" name="celular" required
-                            value="<?php echo htmlspecialchars($usuario['celular']); ?>"
+                        <input type="tel" name="celular"
+                            value="<?php echo htmlspecialchars($usuario['celular'] ?? ''); ?>"
                             class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 transition-colors">
                     </div>
                     <div class="md:col-span-2">
@@ -102,8 +108,8 @@ $errores = $data['errores'] ?? [];
                         <select name="estado" required
                             class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 transition-colors">
                             <option value="activo" <?= ($usuario['estado'] == 'activo') ? 'selected' : ''; ?>>Activo</option>
-                            <option value="inactivo" <?= ($usuario['estado'] == 'inactivo') ? 'selected' : ''; ?>>Inactivo
-                            </option>
+                            <option value="pendiente" <?= ($usuario['estado'] == 'pendiente') ? 'selected' : ''; ?>>Pendiente (En revisión)</option>
+                            <option value="inactivo" <?= ($usuario['estado'] == 'inactivo') ? 'selected' : ''; ?>>Inactivo</option>
                         </select>
                     </div>
                 </div>

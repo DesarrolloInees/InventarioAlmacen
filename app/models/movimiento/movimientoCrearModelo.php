@@ -1,7 +1,9 @@
 <?php
 defined('ENTRADA_PRINCIPAL') or die('Acceso denegado');
 
-require_once __DIR__ . '/../repuestos/RepuestosModelo.php';
+if (file_exists(__DIR__ . '/../repuestos/RepuestosModelo.php')) {
+    require_once __DIR__ . '/../repuestos/RepuestosModelo.php';
+}
 
 class MovimientosModelo
 {

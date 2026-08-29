@@ -111,6 +111,98 @@ $esAdmin = ($nivelUsuario == 1 || $nivelUsuario == 2);
 </style>
 
 <div class="w-full px-4 md:px-6">
+
+    <!-- SECCIÓN DE SOLICITUDES PENDIENTES DE APROBACIÓN (SOLO ADMINS) -->
+    <?php if ($esAdmin): ?>
+        <?php $pendientes = $data['pendientes'] ?? []; ?>
+        <div class="mb-8 bg-amber-50 dark:bg-amber-950/30 p-6 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-amber-100 flex items-center gap-2">
+                            Solicitudes Pendientes de Aprobación
+                            <span class="bg-amber-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                <?php echo count($pendientes); ?>
+                            </span>
+                        </h2>
+                        <p class="text-sm text-gray-600 dark:text-amber-300/80">Usuarios registrados que esperan tu autorización para ingresar al sistema.</p>
+                    </div>
+                </div>
+            </div>
+
+            <?php if (!empty($pendientes)): ?>
+                <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow border border-amber-100 dark:border-amber-900/40">
+                    <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
+                        <thead class="text-xs text-amber-900 dark:text-amber-200 uppercase bg-amber-100/60 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-800">
+                            <tr>
+                                <th class="py-3 px-4">ID</th>
+                                <th class="py-3 px-4">Nombre Solicitante</th>
+                                <th class="py-3 px-4">Empresa</th>
+                                <th class="py-3 px-4">Contacto</th>
+                                <th class="py-3 px-4">Usuario</th>
+                                <th class="py-3 px-4">Rol</th>
+                                <th class="py-3 px-4 text-center">Acción Super Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            <?php foreach ($pendientes as $p): ?>
+                                <tr class="hover:bg-amber-50/50 dark:hover:bg-gray-750 transition-colors">
+                                    <td class="py-3.5 px-4 font-bold text-gray-700 dark:text-gray-400">#<?php echo htmlspecialchars($p['usuario_id']); ?></td>
+                                    <td class="py-3.5 px-4 font-semibold text-gray-900 dark:text-white">
+                                        <?php echo htmlspecialchars($p['nombre']); ?>
+                                        <?php if (!empty($p['cedula'])): ?>
+                                            <span class="block text-xs font-normal text-gray-500">C.C. <?php echo htmlspecialchars($p['cedula']); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-3.5 px-4 font-medium text-indigo-600 dark:text-indigo-400">
+                                        <i class="fa-solid fa-building text-xs mr-1 text-gray-400"></i>
+                                        <?php echo htmlspecialchars($p['empresa'] ?? 'No especificada'); ?>
+                                    </td>
+                                    <td class="py-3.5 px-4 text-xs">
+                                        <div><i class="fa-solid fa-envelope text-gray-400 mr-1"></i><?php echo htmlspecialchars($p['email']); ?></div>
+                                        <?php if (!empty($p['celular'])): ?>
+                                            <div><i class="fa-solid fa-phone text-gray-400 mr-1"></i><?php echo htmlspecialchars($p['celular']); ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="py-3.5 px-4 font-mono text-gray-800 dark:text-gray-200"><?php echo htmlspecialchars($p['usuario']); ?></td>
+                                    <td class="py-3.5 px-4">
+                                        <span class="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold px-2.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
+                                            <?php echo htmlspecialchars($p['rol']); ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                        <div class="flex justify-center items-center space-x-2">
+                                            <button onclick="procesarSolicitudUsuario(<?php echo $p['usuario_id']; ?>, 'aprobar')"
+                                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 shadow-sm transition transform hover:scale-105"
+                                                title="Aprobar Solicitud">
+                                                <i class="fa-solid fa-check"></i>
+                                                <span>Aprobar</span>
+                                            </button>
+                                            <button onclick="procesarSolicitudUsuario(<?php echo $p['usuario_id']; ?>, 'rechazar')"
+                                                class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 shadow-sm transition transform hover:scale-105"
+                                                title="Rechazar Solicitud">
+                                                <i class="fa-solid fa-xmark"></i>
+                                                <span>Rechazar</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-6 bg-white dark:bg-gray-800 rounded-lg border border-dashed border-amber-200 dark:border-amber-800/60">
+                    <p class="text-sm text-gray-500 dark:text-amber-200/70 font-medium">No hay solicitudes de registro pendientes de revisión.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- TABLA DE USUARIOS ACTIVOS -->
     <div
         class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 transition-colors">
 
@@ -118,9 +210,9 @@ $esAdmin = ($nivelUsuario == 1 || $nivelUsuario == 2);
             class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
             <div>
                 <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">
-                    <i class="fas fa-users text-indigo-600 dark:text-indigo-500 mr-2"></i> Gestión de Usuarios
+                    <i class="fas fa-users text-indigo-600 dark:text-indigo-500 mr-2"></i> Usuarios Activos
                 </h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">Crea, edita o elimina los usuarios del sistema.</p>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">Lista de usuarios habilitados en el sistema.</p>
             </div>
 
             <!-- SOLO ADMINS PUEDEN VER EL BOTÓN DE CREAR -->
@@ -141,6 +233,7 @@ $esAdmin = ($nivelUsuario == 1 || $nivelUsuario == 2);
                         <tr>
                             <th class="py-3 px-4">ID</th>
                             <th class="py-3 px-4">Nombre</th>
+                            <th class="py-3 px-4">Empresa</th>
                             <th class="py-3 px-4">Cédula</th>
                             <th class="py-3 px-4">Cargo</th>
                             <th class="py-3 px-4">Rol</th>
@@ -156,8 +249,10 @@ $esAdmin = ($nivelUsuario == 1 || $nivelUsuario == 2);
                                     #<?php echo htmlspecialchars($usuario['usuario_id']); ?></td>
                                 <td class="py-4 px-4 font-medium text-gray-900 dark:text-white">
                                     <?php echo htmlspecialchars($usuario['nombre']); ?></td>
-                                <td class="py-4 px-4 font-mono text-indigo-600 dark:text-indigo-400">
-                                    <?php echo htmlspecialchars($usuario['cedula']); ?></td>
+                                <td class="py-4 px-4 font-semibold text-indigo-600 dark:text-indigo-400">
+                                    <?php echo htmlspecialchars($usuario['empresa'] ?? 'N/A'); ?></td>
+                                <td class="py-4 px-4 font-mono text-gray-600 dark:text-gray-400">
+                                    <?php echo htmlspecialchars($usuario['cedula'] ?? 'N/A'); ?></td>
                                 <td class="py-4 px-4"><?php echo htmlspecialchars($usuario['cargo']); ?></td>
                                 <td class="py-4 px-4">
                                     <span

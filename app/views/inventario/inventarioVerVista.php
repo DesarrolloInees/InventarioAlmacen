@@ -3,7 +3,8 @@
 if (!defined('ENTRADA_PRINCIPAL'))
     die("Acceso denegado.");
 
-$esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] ?? 0) == 2);
+$rolUsuario = $_SESSION['nivel_acceso'] ?? $_SESSION['idTipoUsuario'] ?? 0;
+$esAdmin = ($rolUsuario == 1);
 ?>
 
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.tailwindcss.min.css">

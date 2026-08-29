@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 120" width="500" height="120">
+  <g transform="translate(60, 60) scale(0.9)" stroke="#FFCC00" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="0" cy="0" r="50"/>
+    <line x1="-50" y1="0" x2="50" y2="0"/>
+    <path d="M -43.3 -25 Q 0 -5 43.3 -25"/>
+    <path d="M -43.3 25 Q 0 5 43.3 25"/>
+    <path d="M -25 -43.3 Q -5 0 -25 43.3"/>
+    <path d="M 25 -43.3 Q 5 0 25 43.3"/>
+  </g>
+  <text x="140" y="78" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="52" fill="#FFCC00" letter-spacing="6">PROSEGUR</text>
+</svg>

@@ -30,6 +30,7 @@ class UsuarioCrearModelo
                         usuario, 
                         password_hash, 
                         nivel_acceso, 
+                        idTipoUsuario,
                         forzar_cambio_pwd, 
                         pwd_ultimo_cambio,
                         estado
@@ -42,6 +43,7 @@ class UsuarioCrearModelo
                         :usuario, 
                         :pass, 
                         :nivel_acceso, 
+                        :idTipoUsuario,
                         1, 
                         NOW(),
                         'activo'
@@ -58,6 +60,7 @@ class UsuarioCrearModelo
             $stmt->bindParam(':usuario', $datos['usuario']);
             $stmt->bindParam(':pass', $pass_cifrada);
             $stmt->bindParam(':nivel_acceso', $datos['nivel_acceso'], PDO::PARAM_INT);
+            $stmt->bindParam(':idTipoUsuario', $datos['nivel_acceso'], PDO::PARAM_INT);
 
             return $stmt->execute();
         } catch (PDOException $e) {
@@ -70,7 +73,7 @@ class UsuarioCrearModelo
     public function obtenerTiposUsuario()
     {
         try {
-            $sql = "SELECT idTipoUsuario, nombreTipoUsuario FROM tipousuario ORDER BY nombreTipoUsuario ASC";
+            $sql = "SELECT idTipoUsuario, nombre_rol AS nombreTipoUsuario FROM tipousuario ORDER BY nombre_rol ASC";
             $stmt = $this->conn->query($sql);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {

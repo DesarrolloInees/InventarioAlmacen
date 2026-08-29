@@ -32,6 +32,7 @@ class usuarioEditarControlador
                 'nombre'       => trim($_POST['nombre'] ?? ''),
                 'cedula'       => trim($_POST['cedula'] ?? ''),
                 'cargo'        => trim($_POST['cargo'] ?? ''),
+                'empresa'      => trim($_POST['empresa'] ?? ''),
                 'email'        => trim($_POST['email'] ?? ''),
                 'celular'      => trim($_POST['celular'] ?? ''),
                 'usuario'      => trim($_POST['usuario'] ?? ''),

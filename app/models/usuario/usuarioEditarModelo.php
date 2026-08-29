@@ -34,10 +34,12 @@ class UsuarioEditarModelo
                         nombre = :nombre,
                         cedula = :cedula,
                         cargo = :cargo,
+                        empresa = :empresa,
                         email = :email,
                         celular = :celular,
                         usuario = :usuario,
                         nivel_acceso = :nivel_acceso,
+                        idTipoUsuario = :idTipoUsuario,
                         estado = :estado";
 
             // Solo actualizamos contraseña si el usuario escribió algo
@@ -52,10 +54,12 @@ class UsuarioEditarModelo
             $stmt->bindParam(':nombre', $datos['nombre']);
             $stmt->bindParam(':cedula', $datos['cedula']);
             $stmt->bindParam(':cargo', $datos['cargo']);
+            $stmt->bindParam(':empresa', $datos['empresa']);
             $stmt->bindParam(':email', $datos['email']);
             $stmt->bindParam(':celular', $datos['celular']);
             $stmt->bindParam(':usuario', $datos['usuario']);
             $stmt->bindParam(':nivel_acceso', $datos['nivel_acceso']);
+            $stmt->bindParam(':idTipoUsuario', $datos['nivel_acceso']);
             $stmt->bindParam(':estado', $datos['estado']);
             $stmt->bindParam(':id_usuario', $id_usuario);
 
@@ -73,7 +77,7 @@ class UsuarioEditarModelo
 
     public function obtenerTiposUsuario()
     {
-        $stmt = $this->conn->query("SELECT idTipoUsuario, nombreTipoUsuario FROM tipousuario ORDER BY nombreTipoUsuario ASC");
+        $stmt = $this->conn->query("SELECT idTipoUsuario, nombre_rol AS nombreTipoUsuario FROM tipousuario ORDER BY nombre_rol ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

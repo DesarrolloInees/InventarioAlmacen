@@ -13,7 +13,7 @@ class TipoUsuarioEditarModelo
     public function obtenerTipoUsuarioPorId($id)
     {
         try {
-            $sql = "SELECT * FROM tipousuario WHERE idTipoUsuario = :id";
+            $sql = "SELECT *, nombre_rol AS nombreTipoUsuario FROM tipousuario WHERE idTipoUsuario = :id";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
@@ -26,7 +26,7 @@ class TipoUsuarioEditarModelo
     public function editarTipoUsuario($id, $datos)
     {
         try {
-            $sql = "UPDATE tipousuario SET nombreTipoUsuario = :nombre WHERE idTipoUsuario = :id";
+            $sql = "UPDATE tipousuario SET nombre_rol = :nombre WHERE idTipoUsuario = :id";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':nombre', $datos['nombreTipoUsuario']);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
@@ -39,7 +39,7 @@ class TipoUsuarioEditarModelo
     public function existeTipoUsuarioExcluyendoId($nombre, $idExcluido)
     {
         try {
-            $sql = "SELECT COUNT(*) FROM tipousuario WHERE nombreTipoUsuario = :nombre AND idTipoUsuario != :id";
+            $sql = "SELECT COUNT(*) FROM tipousuario WHERE nombre_rol = :nombre AND idTipoUsuario != :id";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':nombre', $nombre);
             $stmt->bindParam(':id', $idExcluido, PDO::PARAM_INT);

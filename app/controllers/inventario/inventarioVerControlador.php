@@ -55,7 +55,8 @@ class inventarioVerControlador
 
     public function actualizarStockAjax()
     {
-        $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] ?? 0) == 2);
+        $rolUsuario = $_SESSION['nivel_acceso'] ?? $_SESSION['idTipoUsuario'] ?? 0;
+        $esAdmin = ($rolUsuario == 1);
 
         if (!$esAdmin) {
             echo json_encode(['success' => false, 'message' => 'No tienes permisos para realizar esta acción.']);
@@ -89,7 +90,8 @@ class inventarioVerControlador
     // Elimina un registro de inventario_stock (para poder corregir cargas erróneas y re-ingresarlas después)
     public function eliminarStockAjax()
     {
-        $esAdmin = (($_SESSION['nivel_acceso'] ?? 0) == 1 || ($_SESSION['nivel_acceso'] ?? 0) == 2);
+        $rolUsuario = $_SESSION['nivel_acceso'] ?? $_SESSION['idTipoUsuario'] ?? 0;
+        $esAdmin = ($rolUsuario == 1);
 
         if (!$esAdmin) {
             echo json_encode(['success' => false, 'message' => 'No tienes permisos para realizar esta acción.']);

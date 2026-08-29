@@ -1,7 +1,6 @@
 <?php
 if (!defined('ENTRADA_PRINCIPAL'))
     die("Acceso denegado.");
-// Aseguramos que $data exista por si acaso
 $data = $data ?? [];
 ?>
 <!DOCTYPE html>
@@ -10,85 +9,312 @@ $data = $data ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer Contraseña - INEES</title>
-    <script src="<?php echo BASE_URL; ?>js/tailwind.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Restablecer Contraseña - Solicitud Prosegur</title>
+    <link rel="icon" type="image/png" href="<?= BASE_URL ?>app/logos/logoIneesSinFondo.png">
+
+    <!-- Tailwind CSS -->
+    <script src="<?= BASE_URL ?>js/tailwind.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            background: #0f172a;
+        }
+
+        .animated-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0; left: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 25%, #1e7e6c 50%, #11998e 75%, #38ef7d 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 20s ease infinite;
+            z-index: 1;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 50% 100%; }
+            50% { background-position: 100% 50%; }
+            75% { background-position: 50% 0%; }
+        }
+
+        .particles {
+            position: fixed;
+            width: 100%; height: 100%;
+            top: 0; left: 0;
+            z-index: 2;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 30%; animation-delay: 4s; }
+        .particle:nth-child(3) { left: 50%; animation-delay: 3s; }
+        .particle:nth-child(4) { left: 70%; animation-delay: 2.5s; }
+        .particle:nth-child(5) { left: 90%; animation-delay: 1.5s; }
+
+        .card-login {
+            position: relative;
+            z-index: 10;
+            background: rgba(15, 25, 45, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 239, 125, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: scale(0.8) translateY(50px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-login {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(56, 239, 125, 0.3);
+            color: #ffffff;
+            padding: 0.9rem 1rem 0.9rem 3.2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .input-login::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .input-login:focus {
+            background: rgba(56, 239, 125, 0.1);
+            border-color: #38ef7d;
+            box-shadow: 0 0 0 4px rgba(56, 239, 125, 0.2), 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(56, 239, 125, 0.6);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .input-login:focus~.input-icon {
+            color: #38ef7d;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(56, 239, 125, 0.6);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: #38ef7d;
+            transform: translateY(-50%) scale(1.15);
+        }
+
+        .btn-login {
+            position: relative;
+            background: linear-gradient(135deg, #1e3c72 0%, #11998e 100%);
+            border: none;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-login:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(17, 153, 142, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-login:disabled {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: rgba(255, 255, 255, 0.3) !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .logo-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo-container::after {
+            content: '';
+            position: absolute;
+            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            background: radial-gradient(circle, rgba(56, 239, 125, 0.3) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .error-banner {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            backdrop-filter: blur(10px);
         }
     </style>
 </head>
 
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="w-full max-w-md p-8 bg-white rounded-xl shadow-md">
-        <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Crear Nueva Contraseña</h2>
+<body class="flex items-center justify-center min-h-screen py-10">
+
+    <div class="animated-bg"></div>
+
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="card-login rounded-3xl p-8 w-full max-w-md mx-4">
+
+        <div class="text-center mb-6">
+            <div class="logo-container mb-4">
+                <img src="<?= BASE_URL ?>app/logos/logoIneesFondoBlanco.png" alt="Logo-Inees"
+                    class="w-24 mx-auto drop-shadow-2xl transform hover:scale-110 transition-transform duration-300">
+            </div>
+
+            <h1 class="text-2xl font-bold text-white mb-1 tracking-tight">
+                Crear Nueva Contraseña
+            </h1>
+            <p class="text-blue-200 text-xs font-light">
+                Ingresa tu código y define tu nueva clave en <span class="font-semibold text-gradient">Solicitud Prosegur</span>
+            </p>
+        </div>
 
         <?php if (!empty($data['error'])): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline">
+            <div class="error-banner text-red-300 px-4 py-3 rounded-xl text-xs font-medium flex items-center gap-2 mb-5">
+                <i class="fa-solid fa-circle-exclamation text-red-400 text-base"></i>
+                <span>
                     <?php
                     if ($data['error'] == 'codigo_invalido')
                         echo 'El código es incorrecto o ha expirado.';
-                    if ($data['error'] == 'no_coinciden')
+                    elseif ($data['error'] == 'no_coinciden')
                         echo 'Las contraseñas no coinciden.';
-                    if ($data['error'] == 'no_segura')
+                    elseif ($data['error'] == 'no_segura')
                         echo 'La contraseña no cumple los requisitos.';
+                    else
+                        echo htmlspecialchars($data['error']);
                     ?>
                 </span>
             </div>
         <?php endif; ?>
 
-        <form action="<?php echo BASE_URL; ?>resetPassword" method="POST" class="space-y-4">
-
+        <form action="<?= BASE_URL ?>resetPassword" method="POST" class="space-y-4">
             <input type="hidden" name="accion" value="procesarResetPassword">
 
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" name="email" id="email" value="<?php echo htmlspecialchars($data['email']); ?>"
-                    required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-            </div>
-            <div>
-                <label for="codigo" class="block text-sm font-medium text-gray-700">Código de 6 dígitos</label>
-                <input type="text" name="codigo" id="codigo" required autocomplete="off"
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-            </div>
-            <div>
-                <label for="nueva_password" class="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
-                <div class="relative mt-1">
-                    <input type="password" name="nueva_password" id="nueva_password" required
-                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm pr-10">
-                    <i id="toggleNuevaPassword"
-                        class="fa-solid fa-eye absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"></i>
-                </div>
+            <!-- Input Email -->
+            <div class="input-wrapper">
+                <input type="email" name="email" id="email" value="<?= htmlspecialchars($data['email'] ?? '') ?>"
+                    placeholder="Correo Electrónico" required
+                    class="input-login w-full rounded-xl focus:outline-none text-sm font-medium">
+                <i class="input-icon fa-solid fa-envelope"></i>
             </div>
 
-            <ul id="password-requisitos" class="text-sm space-y-1 text-gray-500">
-                <li id="req-largo"><i class="fa-solid fa-times text-red-500 mr-2"></i>Al menos 8 caracteres</li>
-                <li id="req-minuscula"><i class="fa-solid fa-times text-red-500 mr-2"></i>Una letra minúscula</li>
-                <li id="req-mayuscula"><i class="fa-solid fa-times text-red-500 mr-2"></i>Una letra mayúscula</li>
-                <li id="req-numero"><i class="fa-solid fa-times text-red-500 mr-2"></i>Un número</li>
-                <li id="req-simbolo"><i class="fa-solid fa-times text-red-500 mr-2"></i>Un símbolo (ej: @, $, !)</li>
+            <!-- Input Código de 6 dígitos -->
+            <div class="input-wrapper">
+                <input type="text" name="codigo" id="codigo" placeholder="Código de 6 dígitos" required autocomplete="off" maxlength="6"
+                    class="input-login w-full rounded-xl focus:outline-none text-sm font-medium tracking-widest text-center">
+                <i class="input-icon fa-solid fa-key"></i>
+            </div>
+
+            <!-- Input Nueva Contraseña -->
+            <div class="input-wrapper">
+                <input type="password" name="nueva_password" id="nueva_password" placeholder="Nueva Contraseña" required
+                    class="input-login w-full rounded-xl focus:outline-none text-sm font-medium pr-10">
+                <i class="input-icon fa-solid fa-lock"></i>
+                <i id="toggleNuevaPassword" class="password-toggle fa-solid fa-eye"></i>
+            </div>
+
+            <!-- Requisitos de Contraseña -->
+            <ul id="password-requisitos" class="text-xs space-y-1 bg-white/5 p-3 rounded-xl border border-white/10 text-gray-300">
+                <li id="req-largo" class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-400"></i>Al menos 8 caracteres</li>
+                <li id="req-minuscula" class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-400"></i>Una letra minúscula</li>
+                <li id="req-mayuscula" class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-400"></i>Una letra mayúscula</li>
+                <li id="req-numero" class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-400"></i>Un número</li>
+                <li id="req-simbolo" class="flex items-center gap-2"><i class="fa-solid fa-xmark text-red-400"></i>Un símbolo (ej: @, $, !)</li>
             </ul>
 
-            <div>
-                <label for="confirmar_password" class="block text-sm font-medium text-gray-700">Confirmar
-                    Contraseña</label>
-                <div class="relative mt-1">
-                    <input type="password" name="confirmar_password" id="confirmar_password" required
-                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm pr-10">
-                    <i id="toggleConfirmarPassword"
-                        class="fa-solid fa-eye absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"></i>
-                </div>
-                <p id="match-message" class="text-xs mt-1"></p>
+            <!-- Input Confirmar Contraseña -->
+            <div class="input-wrapper">
+                <input type="password" name="confirmar_password" id="confirmar_password" placeholder="Confirmar Nueva Contraseña" required
+                    class="input-login w-full rounded-xl focus:outline-none text-sm font-medium pr-10">
+                <i class="input-icon fa-solid fa-lock-keyhole"></i>
+                <i id="toggleConfirmarPassword" class="password-toggle fa-solid fa-eye"></i>
             </div>
+            <p id="match-message" class="text-xs text-center font-medium"></p>
 
+            <!-- Botón Submit -->
             <button type="submit" id="submit-button" disabled
-                class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                Restablecer Contraseña
+                class="btn-login w-full text-white font-bold py-3.5 rounded-xl text-sm tracking-wide relative flex items-center justify-center gap-2">
+                <i class="fa-solid fa-shield-check"></i>
+                <span>Restablecer Contraseña</span>
             </button>
         </form>
+
+        <div class="mt-6 pt-5 border-t border-white/10 text-center">
+            <a href="<?= BASE_URL ?>login"
+                class="text-xs text-green-300 hover:text-white hover:underline transition-all duration-300 font-medium inline-flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver al Inicio de Sesión
+            </a>
+        </div>
     </div>
 
     <script>
@@ -126,13 +352,13 @@ $data = $data ?? [];
                 if (!icon) return;
 
                 if (esValido) {
-                    elemento.classList.replace('text-gray-500', 'text-green-600');
-                    icon.classList.replace('fa-times', 'fa-check');
-                    icon.classList.replace('text-red-500', 'text-green-600');
+                    elemento.classList.remove('text-gray-300');
+                    elemento.classList.add('text-emerald-400');
+                    icon.className = 'fa-solid fa-check text-emerald-400';
                 } else {
-                    elemento.classList.replace('text-green-600', 'text-gray-500');
-                    icon.classList.replace('fa-check', 'fa-times');
-                    icon.classList.replace('text-green-600', 'text-red-500');
+                    elemento.classList.remove('text-emerald-400');
+                    elemento.classList.add('text-gray-300');
+                    icon.className = 'fa-solid fa-xmark text-red-400';
                 }
             }
 
@@ -155,14 +381,12 @@ $data = $data ?? [];
                 let passwordsCoinciden = false;
                 if (confirmPassword.length > 0) {
                     if (password === confirmPassword) {
-                        matchMessage.textContent = 'Las contraseñas coinciden.';
-                        matchMessage.classList.remove('text-red-500');
-                        matchMessage.classList.add('text-green-600');
+                        matchMessage.textContent = '✓ Las contraseñas coinciden';
+                        matchMessage.className = 'text-xs text-center font-medium text-emerald-400 mt-1';
                         passwordsCoinciden = true;
                     } else {
-                        matchMessage.textContent = 'Las contraseñas no coinciden.';
-                        matchMessage.classList.remove('text-green-600');
-                        matchMessage.classList.add('text-red-500');
+                        matchMessage.textContent = '✕ Las contraseñas no coinciden';
+                        matchMessage.className = 'text-xs text-center font-medium text-red-400 mt-1';
                         passwordsCoinciden = false;
                     }
                 } else {

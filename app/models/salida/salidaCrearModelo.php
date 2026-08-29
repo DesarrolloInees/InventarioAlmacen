@@ -1,273 +1,248 @@
 <?php
-// app/models/salida/salidaCrearModelo.php
-if (!defined('ENTRADA_PRINCIPAL'))
-    die("Acceso denegado.");
+if (!defined('ENTRADA_PRINCIPAL')) die("Acceso denegado.");
 
 class SalidaCrearModelo
 {
-    private $conn;
-    public function __construct(PDO $db)
+    private $db;
+
+    public function __construct(PDO $conexion)
     {
-        $this->conn = $db;
+        $this->db = $conexion;
     }
 
-    public function obtenerTecnicos()
+    /**
+     * Establece conexión con la base de datos remota (inventario_almacen).
+     * Si falla por red o credenciales, realiza un fallback a la base de datos local.
+     */
+    private function obtenerConexionRemota()
     {
-        $listaFinal = [];
-
-        // 1. CARGAR TÉCNICOS LOCALES (Desde la nueva tabla)
-        try {
-            $sql = "SELECT id_tecnico_local, nombre_tecnico FROM tecnicos_locales WHERE estado = 1 ORDER BY nombre_tecnico ASC";
-            $stmt = $this->conn->prepare($sql);
-            $stmt->execute();
-            $locales = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($locales as $loc) {
-                $listaFinal[] = [
-                    // Mantenemos el prefijo 'local_' para que la lógica de guardado siga funcionando perfecto
-                    'usuario_id' => 'local_' . $loc['id_tecnico_local'],
-                    'nombre' => $loc['nombre_tecnico'],
-                    'cargo' => 'Taller / Interno'
-                ];
-            }
-        } catch (PDOException $e) {
-            error_log("Error cargando técnicos locales: " . $e->getMessage());
+        if (class_exists('Conexion')) {
+            $conexionObj = new Conexion();
+            return $conexionObj->getConexionRemota();
         }
-
-        // 2. CARGAR TÉCNICOS EXTERNOS / MOTORIZADOS (Se queda exactamente igual)
-        try {
-            $connMotos = new PDO("mysql:host=127.0.0.1;dbname=inees_mantenimientos;charset=utf8mb4", "root", "");
-            $connMotos->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            $sqlM = "SELECT id_tecnico, nombre_tecnico FROM tecnico WHERE estado = 1 ORDER BY nombre_tecnico ASC";
-            $stmtM = $connMotos->prepare($sqlM);
-            $stmtM->execute();
-            $motos = $stmtM->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($motos as $mot) {
-                $listaFinal[] = [
-                    'usuario_id' => 'moto_' . $mot['id_tecnico'],
-                    'nombre' => $mot['nombre_tecnico'],
-                    'cargo' => 'Técnico Motorizado (Ruta)'
-                ];
-            }
-        } catch (PDOException $e) {
-            error_log("Error cargando técnicos externos: " . $e->getMessage());
-        }
-
-        return $listaFinal;
+        return $this->db;
     }
 
+    /**
+     * Obtiene el listado de productos y repuestos consolidados.
+     */
     public function obtenerInventarioDisponible()
     {
+        $conexionActiva = $this->obtenerConexionRemota();
+
+        $sql = "SELECT 
+                    r.id_repuesto AS inventario_id,
+                    r.id_repuesto AS producto_id,
+                    COALESCE(i.cantidad_total, 0) AS cantidad_disponible,
+                    'Bodega Principal' AS ubicacion,
+                    'disponible' AS estado_inventario,
+                    NOW() AS fecha_actualizacion,
+                    CAST(r.nombre_repuesto AS CHAR CHARACTER SET utf8mb4) AS nombre_producto,
+                    'Repuesto' AS categoria,
+                    'unidad' AS unidad_medida,
+                    5 AS stock_minimo
+                FROM repuestos r
+                LEFT JOIN inventario_stock i ON r.id_repuesto = i.id_repuesto
+
+                UNION ALL
+
+                SELECT 
+                    p.id_producto AS inventario_id,
+                    p.id_producto AS producto_id,
+                    COALESCE(i.cantidad_total, 0) AS cantidad_disponible,
+                    'Bodega Principal' AS ubicacion,
+                    'disponible' AS estado_inventario,
+                    NOW() AS fecha_actualizacion,
+                    CAST(p.nombre_producto AS CHAR CHARACTER SET utf8mb4) AS nombre_producto,
+                    'Producto' AS categoria,
+                    'unidad' AS unidad_medida,
+                    5 AS stock_minimo
+                FROM productos p
+                LEFT JOIN inventario_stock i ON p.id_producto = i.id_producto
+
+                ORDER BY nombre_producto ASC";
+
         try {
-            $sql = "SELECT 
-                        'repuesto' AS tipo, r.id_repuesto AS id_interno,
-                        CAST(r.nombre_repuesto AS CHAR CHARACTER SET utf8mb4) AS nombre,
-                        CAST(r.codigo_referencia AS CHAR CHARACTER SET utf8mb4) AS codigo,
-                        i.cantidad_total AS stock,
-                        CAST(r.condicion AS CHAR CHARACTER SET utf8mb4) AS condicion
-                    FROM repuestos r
-                    INNER JOIN inventario_stock i ON r.id_repuesto = i.id_repuesto
-                    WHERE r.estado = 1 AND i.cantidad_total > 0
-                    UNION ALL
-                    SELECT 
-                        'producto' AS tipo, p.id_producto AS id_interno,
-                        CAST(p.nombre_producto AS CHAR CHARACTER SET utf8mb4) AS nombre,
-                        CAST(p.codigo_interno AS CHAR CHARACTER SET utf8mb4) AS codigo,
-                        i.cantidad_total AS stock, 'N/A' AS condicion
-                    FROM productos p
-                    INNER JOIN inventario_stock i ON p.id_producto = i.id_producto
-                    WHERE p.estado = 1 AND i.cantidad_total > 0
-                    ORDER BY nombre ASC";
-
-            $stmt = $this->conn->prepare($sql);
+            $stmt = $conexionActiva->prepare($sql);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error al cargar inventario para salida: " . $e->getMessage());
-            return [];
-        }
-    }
+            $data = $stmt->fetchAll();
 
-    public function obtenerCatalogoCompleto()
-    {
-        try {
-            $sql = "SELECT 
-                        'repuesto' AS tipo, r.id_repuesto AS id_interno,
-                        CAST(r.nombre_repuesto AS CHAR CHARACTER SET utf8mb4) AS nombre,
-                        CAST(r.codigo_referencia AS CHAR CHARACTER SET utf8mb4) AS codigo,
-                        CAST(r.condicion AS CHAR CHARACTER SET utf8mb4) AS condicion
-                    FROM repuestos r
-                    WHERE r.estado = 1
-                    UNION ALL
-                    SELECT 
-                        'producto' AS tipo, p.id_producto AS id_interno,
-                        CAST(p.nombre_producto AS CHAR CHARACTER SET utf8mb4) AS nombre,
-                        CAST(p.codigo_interno AS CHAR CHARACTER SET utf8mb4) AS codigo,
-                        'N/A' AS condicion
-                    FROM productos p
-                    WHERE p.estado = 1
-                    ORDER BY nombre ASC";
+            // Si retorna vacío, intentamos en la base local como respaldo secundario
+            if (empty($data) && $conexionActiva !== $this->db) {
+                $stmtLocal = $this->db->prepare($sql);
+                $stmtLocal->execute();
+                return $stmtLocal->fetchAll();
+            }
 
-            $stmt = $this->conn->prepare($sql);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $data;
         } catch (PDOException $e) {
-            error_log("Error al cargar catálogo completo: " . $e->getMessage());
+            error_log("Error en SQL obtenerInventarioDisponible: " . $e->getMessage());
             return [];
         }
     }
 
     /**
-     * Procesa un carrito mixto ENTRADA/SALIDA. Cada tipo va a su propia tabla:
-     * ENTRADA -> movimientos_entrada | SALIDA -> movimientos_salida
+     * Obtiene el detalle de un ítem según su ID único.
      */
-    public function procesarMovimientoMultiple($idTecnicoDropdown, $items, $idAdmin, $tipoAsignacion, $datosGlobales)
+    public function obtenerInventarioPorId($inventario_id)
     {
-        $origen = null;
-        $idTecnicoReal = null;
+        $conexionActiva = $this->obtenerConexionRemota();
 
-        // Parseamos el técnico solo si enviaron uno
-        if (!empty($idTecnicoDropdown)) {
-            $partesId = explode('_', $idTecnicoDropdown);
-            $origen = $partesId[0]; // 'local' o 'moto'
-            $idTecnicoReal = intval($partesId[1] ?? 0);
-            if ($idTecnicoReal === 0)
-                $idTecnicoReal = null;
-        }
+        $sql = "SELECT 
+                    r.id_repuesto AS inventario_id,
+                    r.id_repuesto AS producto_id,
+                    COALESCE(i.cantidad_total, 0) AS cantidad_disponible,
+                    'Bodega Principal' AS ubicacion,
+                    'activo' AS estado,
+                    CAST(r.nombre_repuesto AS CHAR CHARACTER SET utf8mb4) AS nombre_producto,
+                    'Repuesto' AS categoria,
+                    'unidad' AS unidad_medida
+                FROM repuestos r
+                LEFT JOIN inventario_stock i ON r.id_repuesto = i.id_repuesto
+                WHERE r.id_repuesto = :id_r
 
-        // Si eligieron sync con App Motorizados pero no seleccionaron a nadie, ahí sí bloqueamos
-        if (($tipoAsignacion === 'motorizado' || $origen === 'moto') && !$idTecnicoReal) {
-            return ['exito' => false, 'msg' => 'Debes seleccionar un motorizado válido para sincronizar con la App Externa.'];
-        }
+                UNION ALL
 
-        $destino = $datosGlobales['destino'];
-        $remision = $datosGlobales['remision'];
-        $cotizacion = $datosGlobales['cotizacion'];
-        $novedad = $datosGlobales['novedad'];
+                SELECT 
+                    p.id_producto AS inventario_id,
+                    p.id_producto AS producto_id,
+                    COALESCE(i.cantidad_total, 0) AS cantidad_disponible,
+                    'Bodega Principal' AS ubicacion,
+                    'activo' AS estado,
+                    CAST(p.nombre_producto AS CHAR CHARACTER SET utf8mb4) AS nombre_producto,
+                    'Producto' AS categoria,
+                    'unidad' AS unidad_medida
+                FROM productos p
+                LEFT JOIN inventario_stock i ON p.id_producto = i.id_producto
+                WHERE p.id_producto = :id_p
+                LIMIT 1";
 
         try {
-            $this->conn->beginTransaction();
-            $connMotos = null;
-
-            // Conexión externa (solo si hay un técnico motorizado real)
-            if ($idTecnicoReal && ($tipoAsignacion === 'motorizado' || $origen === 'moto')) {
-                try {
-                    $connMotos = new PDO("mysql:host=127.0.0.1;dbname=inees_mantenimientos;charset=utf8mb4", "root", "");
-                    $connMotos->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                    $connMotos->beginTransaction();
-
-                    $stmtTecMoto = $connMotos->prepare("SELECT id_tecnico FROM tecnico WHERE id_tecnico = :id");
-                    $stmtTecMoto->execute([':id' => $idTecnicoReal]);
-
-                    if (!$stmtTecMoto->fetchColumn()) {
-                        throw new Exception("El motorizado seleccionado no existe en la BD externa.");
-                    }
-                } catch (PDOException $e) {
-                    throw new Exception("Error conexión BD Motorizados: " . $e->getMessage());
-                }
-            }
-
-            foreach ($items as $item) {
-                $esManual = empty($item['id']) || $item['id'] === 'OTRO';
-                $esRepuesto = ($item['tipo'] === 'repuesto');
-                $idItem = $esManual ? null : intval($item['id']);
-                $cantidad = intval($item['cantidad']);
-                $codigoRef = $item['codigo'] ?? '';
-                $columnaFiltro = $esRepuesto ? 'id_repuesto' : 'id_producto';
-
-                if ($cantidad <= 0)
-                    throw new Exception("Cantidad inválida para ítem.");
-
-                // Descontar Stock
-                if (!$esManual) {
-                    $sqlStock = "SELECT cantidad_total FROM inventario_stock WHERE $columnaFiltro = :id FOR UPDATE";
-                    $stmtS = $this->conn->prepare($sqlStock);
-                    $stmtS->execute([':id' => $idItem]);
-                    $stockActual = $stmtS->fetchColumn();
-
-                    if ($stockActual === false || $stockActual < $cantidad) {
-                        throw new Exception("Stock insuficiente para: " . ($item['nombre'] ?? ''));
-                    }
-
-                    $sqlUpd = "UPDATE inventario_stock SET cantidad_total = cantidad_total - :cant WHERE $columnaFiltro = :id";
-                    $stmtU = $this->conn->prepare($sqlUpd);
-                    $stmtU->execute([':cant' => $cantidad, ':id' => $idItem]);
-                }
-
-                $observacionFinal = "Salida - Origen: " . ($origen === 'moto' ? 'motorizado' : 'interno');
-                $novedadItem = !empty($item['novedad']) ? trim($item['novedad']) : $novedad;
-
-                // INSERT CORREGIDO APUNTANDO A movimientos_inventario
-                $sqlMov = "INSERT INTO movimientos_inventario
-                            (id_repuesto, id_producto, repuesto_manual, tipo_movimiento, cantidad, id_tecnico_destino,
-                                destino, numero_remision, numero_cotizacion, novedad,
-                                observacion, id_usuario_registra, fecha_movimiento)
-                            VALUES
-                            (:id_repuesto, :id_producto, :repuesto_manual, 'SALIDA', :cant, :idt,
-                                :destino, :remision, :cotizacion, :novedad,
-                                :obs, :ida, NOW())";
-
-                $stmtM = $this->conn->prepare($sqlMov);
-                $stmtM->bindValue(':id_repuesto', ($esRepuesto && !$esManual) ? $idItem : null, PDO::PARAM_INT);
-                $stmtM->bindValue(':id_producto', (!$esRepuesto && !$esManual) ? $idItem : null, PDO::PARAM_INT);
-                $stmtM->bindValue(':repuesto_manual', $esManual ? ($item['repuesto_manual'] ?? $item['nombre'] ?? null) : null);
-                $stmtM->bindValue(':cant', $cantidad, PDO::PARAM_INT);
-                $stmtM->bindValue(':idt', $idTecnicoReal, $idTecnicoReal ? PDO::PARAM_INT : PDO::PARAM_NULL);
-                $stmtM->bindValue(':destino', $destino);
-                $stmtM->bindValue(':remision', $remision);
-                $stmtM->bindValue(':cotizacion', $cotizacion);
-                $stmtM->bindValue(':novedad', $novedadItem);
-                $stmtM->bindValue(':obs', $observacionFinal);
-                $stmtM->bindValue(':ida', $idAdmin, PDO::PARAM_INT);
-                $stmtM->execute();
-
-                // Sincronización Motorizados
-                if (!$esManual && $esRepuesto && $connMotos !== null && ($tipoAsignacion === 'motorizado' || $origen === 'moto')) {
-                    if (empty($codigoRef) || $codigoRef === 'S/C')
-                        throw new Exception("Repuesto sin código válido para App Externa.");
-
-                    $stmtRepMoto = $connMotos->prepare("SELECT id_repuesto FROM repuesto WHERE codigo_referencia = :codigo");
-                    $stmtRepMoto->execute([':codigo' => $codigoRef]);
-                    $idRepuestoMoto = $stmtRepMoto->fetchColumn();
-
-                    // --- NUEVA LÓGICA: Si no existe, lo creamos automáticamente ---
-                    if (!$idRepuestoMoto) {
-                        $sqlInsertMoto = "INSERT INTO repuesto (nombre_repuesto, codigo_referencia) VALUES (:nombre, :codigo)";
-                        $stmtInsertMoto = $connMotos->prepare($sqlInsertMoto);
-                        // Usamos el nombre que viene del carrito. Los demás campos tomarán su DEFAULT (ej. valor_venta = 0.00)
-                        $stmtInsertMoto->execute([
-                            ':nombre' => $item['nombre'] ?? 'Repuesto Sin Nombre',
-                            ':codigo' => $codigoRef
-                        ]);
-                        // Capturamos el ID del repuesto recién creado en la otra base de datos
-                        $idRepuestoMoto = $connMotos->lastInsertId();
-                    }
-                    // -------------------------------------------------------------
-
-                    $sqlMoto = "INSERT INTO inventario_tecnico (id_tecnico, id_repuesto, cantidad_actual) 
-                                VALUES (:idt, :idr, :cant) 
-                                ON DUPLICATE KEY UPDATE cantidad_actual = cantidad_actual + :cant";
-                    $stmtMoto = $connMotos->prepare($sqlMoto);
-                    $stmtMoto->execute([':idt' => $idTecnicoReal, ':idr' => $idRepuestoMoto, ':cant' => $cantidad]);
-                }
-            }
-
-            $this->conn->commit();
-            if ($connMotos !== null)
-                $connMotos->commit();
-
-            return ['exito' => true, 'msg' => 'Salida procesada con éxito.'];
-
-        } catch (\Throwable $e) {
-            $this->conn->rollBack();
-            if (isset($connMotos) && $connMotos !== null && $connMotos->inTransaction()) {
-                $connMotos->rollBack();
-            }
-            $errorCrudo = "💥 ERROR FATAL: " . $e->getMessage() . " | Línea: " . $e->getLine();
-            error_log($errorCrudo);
-            return ['exito' => false, 'msg' => $errorCrudo];
+            $stmt = $conexionActiva->prepare($sql);
+            $stmt->bindParam(':id_r', $inventario_id, PDO::PARAM_INT);
+            $stmt->bindParam(':id_p', $inventario_id, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Error en obtenerInventarioPorId: " . $e->getMessage());
+            return false;
         }
+    }
+
+    /**
+     * Actualiza el registro de stock.
+     */
+    public function actualizarInventario($inventario_id, $cantidad, $ubicacion, $estado)
+    {
+        $conexionActiva = $this->obtenerConexionRemota();
+
+        $sql = "UPDATE inventario_stock 
+                SET cantidad_total = :cantidad
+                WHERE id_repuesto = :id_r OR id_producto = :id_p";
+
+        try {
+            $stmt = $conexionActiva->prepare($sql);
+            $stmt->bindParam(':cantidad', $cantidad, PDO::PARAM_INT);
+            $stmt->bindParam(':id_r', $inventario_id, PDO::PARAM_INT);
+            $stmt->bindParam(':id_p', $inventario_id, PDO::PARAM_INT);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Error en actualizarInventario: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Consulta unificada de personal técnico (Local + Remoto).
+     */
+    public function obtenerTecnicos()
+    {
+        $listaFinal = [];
+
+        // 1. Técnicos Locales
+        try {
+            $sql = "SELECT id_tecnico_local, nombre_tecnico FROM tecnicos_locales WHERE estado = 1 ORDER BY nombre_tecnico ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $locales = $stmt->fetchAll();
+
+            foreach ($locales as $loc) {
+                $listaFinal[] = [
+                    'usuario_id' => 'local_' . $loc['id_tecnico_local'],
+                    'nombre'     => $loc['nombre_tecnico'],
+                    'cargo'      => 'Taller / Interno'
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log("Error al cargar técnicos locales: " . $e->getMessage());
+        }
+
+        // 2. Técnicos Motorizados (Conexión remota a inventario_almacen)
+        try {
+            $options = [PDO::ATTR_TIMEOUT => 3, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
+            $connMotos = new PDO("mysql:host=192.168.2.254;dbname=inventario-almacen;charset=utf8mb4", "root", "", $options);
+
+            $sqlM = "SELECT id_tecnico, nombre_tecnico FROM tecnico WHERE estado = 1 ORDER BY nombre_tecnico ASC";
+            $stmtM = $connMotos->prepare($sqlM);
+            $stmtM->execute();
+            $motos = $stmtM->fetchAll();
+
+            foreach ($motos as $mot) {
+                $listaFinal[] = [
+                    'usuario_id' => 'moto_' . $mot['id_tecnico'],
+                    'nombre'     => $mot['nombre_tecnico'],
+                    'cargo'      => 'Técnico Motorizado (Ruta)'
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log("Error al cargar técnicos externos: " . $e->getMessage());
+        }
+
+        return $listaFinal;
+    }
+
+    /**
+     * Usuarios Super Usuario (Local)
+     */
+    public function obtenerSuperusuarios()
+    {
+        $sql = "SELECT usuario_id, nombre, email 
+                FROM usuarios 
+                WHERE cargo = 'Super Usuario' AND estado = 'activo'";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Registra notificaciones en el sistema local
+     */
+    public function crearNotificacionSistema($usuarioId, $mensaje, $tipo = 'alerta', $titulo = 'Notificación del sistema') 
+    {
+        $sql = "INSERT INTO notificaciones (usuario_id, tipo, titulo, mensaje, leida, fecha_creacion) 
+                VALUES (:usuario_id, :tipo, :titulo, :mensaje, 0, NOW())";
+        
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':usuario_id' => $usuarioId,
+            ':tipo'       => $tipo,
+            ':titulo'     => $titulo,
+            ':mensaje'    => $mensaje
+        ]);
+    }
+
+    /**
+     * Consulta de notificaciones no leídas
+     */
+    public function obtenerNotificacionesNoLeidas($usuarioId) 
+    {
+        $sql = "SELECT * FROM notificaciones 
+                WHERE usuario_id = :usuario_id 
+                ORDER BY fecha_creacion DESC LIMIT 5";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':usuario_id' => $usuarioId]);
+        return $stmt->fetchAll();
     }
 }

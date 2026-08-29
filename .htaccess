@@ -6,7 +6,7 @@ RewriteEngine On
 # 🎯 CAMBIO CLAVE: Apuntamos a la carpeta del NUEVO proyecto
 # ==============================================================
 # Si tu carpeta es "InventarioAlmacen", ponlo así:
-RewriteBase /InventarioAlmacen/
+RewriteBase /solicitudProsegur/
 
 # --- Reglas de reescritura (Adaptadas del Proyecto Antiguo) ---
 

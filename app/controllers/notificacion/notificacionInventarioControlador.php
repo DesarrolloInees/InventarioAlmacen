@@ -146,12 +146,12 @@ class NotificacionInventarioControlador
                 }
                 
                 $mensajeHTML .= "</tbody></table>";
-                $mensajeHTML .= "<p style='margin-top: 20px; font-family: sans-serif;'><a href='" . BASE_URL . "inventarioVer' style='background-color: #ffc107; color: black; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;'>Ingresar al Almacén</a></p>";
+                $mensajeHTML .= "<p style='margin-top: 20px; font-family: sans-serif;'><a href='" . BASE_URL . "inventario' style='background-color: #ffc107; color: black; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px;'>Ingresar al Almacén</a></p>";
 
                 if (count($itemsCriticos) > 5) {
                     $mensajeWA .= "Y " . (count($itemsCriticos) - 5) . " artículos más bajo el umbral.\n\n";
                 }
-                $mensajeWA .= "🔗 Revisa el stock unificado aquí: " . BASE_URL . "inventarioVer";
+                $mensajeWA .= "🔗 Revisa el stock unificado aquí: " . BASE_URL . "inventario";
 
                 $asunto = "⚠️ [ALERTA DE INVENTARIO] Stock Crítico Detectado (≤ " . ALERTAS_UMBRAL_STOCK_CRITICO . " Unidades)";
                 $correoEnviado = $this->enviarCorreoAlerta(ALERTAS_CORREO_DESTINO, $asunto, $mensajeHTML);

@@ -9,7 +9,8 @@ $error_login = $data['error_login'] ?? false;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - I-Stock</title>
+    <title>Login - Solicitud</title>
+    <link rel="icon" type="image/png" href="<?= BASE_URL ?>app/logos/logoIneesSinFondo.png">
 
     <!-- Tailwind CSS -->
 
@@ -447,7 +448,7 @@ $error_login = $data['error_login'] ?? false;
             Bienvenido
         </h1>
         <p class="text-blue-200 mb-8 text-lg font-light">
-            Inicia sesión en <span class="font-semibold text-gradient">I-Stock</span>
+            Inicia sesión en <span class="font-semibold text-gradient">Solicitudes Inees </span>
         </p>
 
         <!-- Formulario -->
@@ -482,13 +483,22 @@ $error_login = $data['error_login'] ?? false;
             </button>
         </form>
 
-        <!-- ¿Olvidaste tu contraseña? -->
-        <div class="mt-6">
-            <a href="<?php echo htmlspecialchars($datos_plantilla['baseURL']); ?>solicitarCodigo"
-                class="text-sm text-green-300 hover:text-white hover:underline transition-all duration-300 font-medium inline-flex items-center">
-                <i class="fa-solid fa-key mr-2"></i>
-                ¿Olvidaste tu contraseña?
-            </a>
+        <!-- ¿Olvidaste tu contraseña? / Registrarse -->
+        <div class="mt-6 space-y-2.5">
+            <div>
+                <a href="<?php echo htmlspecialchars($datos_plantilla['baseURL']); ?>registro"
+                    class="text-sm text-blue-300 hover:text-white hover:underline transition-all duration-300 font-bold inline-flex items-center bg-blue-500/10 px-4 py-2 rounded-xl border border-blue-400/30">
+                    <i class="fa-solid fa-user-plus mr-2 text-blue-400"></i>
+                    ¿No tienes cuenta? Regístrate aquí (Técnico)
+                </a>
+            </div>
+            <div>
+                <a href="<?php echo htmlspecialchars($datos_plantilla['baseURL']); ?>solicitarCodigo"
+                    class="text-xs text-green-300 hover:text-white hover:underline transition-all duration-300 font-medium inline-flex items-center">
+                    <i class="fa-solid fa-key mr-2"></i>
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </div>
         </div>
 
         <!-- Contenedor para mensajes de error -->

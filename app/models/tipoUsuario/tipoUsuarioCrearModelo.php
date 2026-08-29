@@ -13,7 +13,7 @@ class TipoUsuarioCrearModelo
     public function crearTipoUsuario($datos)
     {
         try {
-            $sql = "INSERT INTO tipousuario (nombreTipoUsuario) VALUES (:nombre)";
+            $sql = "INSERT INTO tipousuario (nombre_rol) VALUES (:nombre)";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':nombre', $datos['nombreTipoUsuario']);
             return $stmt->execute();
@@ -25,7 +25,7 @@ class TipoUsuarioCrearModelo
     public function existeTipoUsuario($nombre)
     {
         try {
-            $sql = "SELECT COUNT(*) FROM tipousuario WHERE nombreTipoUsuario = :nombre";
+            $sql = "SELECT COUNT(*) FROM tipousuario WHERE nombre_rol = :nombre";
             $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':nombre', $nombre);
             $stmt->execute();
