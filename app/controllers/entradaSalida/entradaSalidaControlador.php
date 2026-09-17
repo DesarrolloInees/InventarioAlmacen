@@ -53,17 +53,39 @@ class entradaSalidaControlador
 
             $fechaFormateada = date('d/m/Y', strtotime($mov['fecha_movimiento']));
 
+            // RECUPERADO: tecnico + detalle concatenado (novedad + observacion + serial)
+            $esRecuperado = (($mov['origen_entrada'] ?? null) === 'RECUPERADO');
+            if ($esRecuperado) {
+                if (!empty($mov['tecnico_local'])) {
+                    $tecnicoOrigen = $mov['tecnico_local'];
+                } elseif (!empty($mov['tecnico_origen_nombre'])) {
+                    $tecnicoOrigen = $mov['tecnico_origen_nombre'];
+                } else {
+                    $tecnicoOrigen = 'N/A';
+                }
+                $partesDetalle = [];
+                if (!empty($mov['novedad'])) $partesDetalle[] = 'Novedad: ' . $mov['novedad'];
+                if (!empty($mov['observacion'])) $partesDetalle[] = 'Obs: ' . $mov['observacion'];
+                if (!empty($mov['serial_recuperado'])) $partesDetalle[] = 'Serial: ' . $mov['serial_recuperado'];
+                $novedadFinal = !empty($partesDetalle) ? implode(' | ', $partesDetalle) : 'N/A';
+            } else {
+                $tecnicoOrigen = null;
+                $novedadFinal = !empty($mov['novedad']) ? $mov['novedad'] : 'N/A';
+            }
+
             $filaProcesada = [
                 'id_movimiento' => $mov['id_movimiento'],
                 'fecha' => $fechaFormateada,
                 'articulo' => $nombreArticulo,
                 'cantidad' => $mov['cantidad'],
-                'novedad' => !empty($mov['novedad']) ? $mov['novedad'] : 'N/A',
-                'destino' => !empty($mov['destino']) ? $mov['destino'] : 'N/A',
+                'novedad' => $novedadFinal,
+                'destino' => !empty($mov['destino']) ? $mov['destino'] : ($esRecuperado ? ('Recuperado por: ' . $tecnicoOrigen) : 'N/A'),
                 'remision' => !empty($mov['numero_remision']) ? $mov['numero_remision'] : 'N/A',
-                'cotizacion' => !empty($mov['numero_cotizacion']) ? $mov['numero_cotizacion'] : 'N/A',
+                'cotizacion' => !empty($mov['numero_cotizacion']) ? $mov['numero_cotizacion'] : ($esRecuperado ? 'RECUPERADO' : 'N/A'),
                 'usuario' => $mov['nombre_usuario'] ?? 'Sistema',
-                'tipo' => $mov['tipo_movimiento']
+                'tipo' => $mov['tipo_movimiento'],
+                'origen_entrada' => $mov['origen_entrada'] ?? null,
+                'tecnico_origen' => $tecnicoOrigen,
             ];
 
             if ($mov['tipo_movimiento'] === 'SALIDA') {

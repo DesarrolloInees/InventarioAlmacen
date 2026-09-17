@@ -63,6 +63,14 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
                 <i class="fa-solid fa-hand-holding-dollar w-5 text-center mr-1 text-emerald-500"></i>Ver Compras
             </a>
+            <a href="<?= BASE_URL ?>recuperacionCrear"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-recycle w-5 text-center mr-1 text-amber-500"></i>Entrada Recuperado (Tecnicos)
+            </a>
+            <a href="<?= BASE_URL ?>recuperacionVer"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-clock-rotate-left w-5 text-center mr-1 text-amber-600"></i>Ver Recuperados
+            </a>
         </div>
     </div>
 
@@ -153,6 +161,10 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
             <a href="<?= BASE_URL ?>entradaSalida"
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
                 <i class="fa-solid fa-left-right w-5 text-center mr-1 text-yellow-500"></i> Movimientos Inventario
+            </a>
+            <a href="<?= BASE_URL ?>recuperacionVer"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-recycle w-5 text-center mr-1 text-amber-500"></i> Recuperados Tecnicos
             </a>
         </div>
     </div>

@@ -113,11 +113,17 @@
     </div>
 
     <?php
-    // Función local para renderizar cada bloque (Salidas / Entradas)
-    function renderTablaMovimientos($titulo, $colorTitulo, $colorHeader, $filas, $fechaUnica, $etiquetaUltima)
+    // Render de cada bloque. $esEntradas=true agrega columna Tecnico solo en ENTRADAS.
+    function renderTablaMovimientos($titulo, $colorTitulo, $colorHeader, $filas, $fechaUnica, $etiquetaUltima, $esEntradas = false)
     {
         if (empty($filas)) {
             return;
+        }
+        $hayRec = false;
+        if ($esEntradas) {
+            foreach ($filas as $f) {
+                if (($f['origen_entrada'] ?? null) === 'RECUPERADO') { $hayRec = true; break; }
+            }
         }
         ?>
         <div class="card-wrapper">
@@ -137,7 +143,10 @@
                             <?php endif; ?>
                             <th class="py-2 px-3 <?= $fechaUnica ? 'rounded-tl-lg' : '' ?>">Repuesto / Artículo</th>
                             <th class="py-2 px-3 text-center">Cant.</th>
-                            <th class="py-2 px-3">Novedad</th>
+                            <th class="py-2 px-3">Novedad / Detalle</th>
+                            <?php if ($esEntradas && $hayRec): ?>
+                                <th class="py-2 px-3">Técnico recupera</th>
+                            <?php endif; ?>
                             <th class="py-2 px-3">Destino</th>
                             <th class="py-2 px-3">N° Remisión</th>
                             <th class="py-2 px-3"><?= $etiquetaUltima ?></th>
@@ -146,13 +155,17 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <?php foreach ($filas as $fila): ?>
+                            <?php $esRec = (($fila['origen_entrada'] ?? null) === 'RECUPERADO'); ?>
                             <tr class="hover:bg-slate-50">
                                 <?php if (!$fechaUnica): ?>
                                     <td class="py-1.5 px-3 whitespace-nowrap"><?= $fila['fecha'] ?></td>
                                 <?php endif; ?>
-                                <td class="py-1.5 px-3 font-medium text-slate-700"><?= htmlspecialchars($fila['articulo']) ?></td>
+                                <td class="py-1.5 px-3 font-medium text-slate-700"><?= htmlspecialchars($fila['articulo']) ?><?php if ($esRec): ?> <span style="background:#fef3c7;color:#92400e;font-size:9px;font-weight:bold;padding:1px 6px;border-radius:9999px;">RECUPERADO</span><?php endif; ?></td>
                                 <td class="py-1.5 px-3 text-center font-black text-slate-800"><?= $fila['cantidad'] ?></td>
                                 <td class="py-1.5 px-3 text-slate-600"><?= htmlspecialchars($fila['novedad']) ?></td>
+                                <?php if ($esEntradas && $hayRec): ?>
+                                    <td class="py-1.5 px-3 text-slate-600 font-bold"><?= htmlspecialchars($esRec ? ($fila['tecnico_origen'] ?? 'N/A') : '—') ?></td>
+                                <?php endif; ?>
                                 <td class="py-1.5 px-3 text-slate-600"><?= htmlspecialchars($fila['destino']) ?></td>
                                 <td class="py-1.5 px-3 text-slate-600"><?= htmlspecialchars($fila['remision']) ?></td>
                                 <td class="py-1.5 px-3 text-slate-600"><?= htmlspecialchars($fila['cotizacion']) ?></td>
@@ -169,7 +182,7 @@
 
     <!-- SALIDAS -->
     <?php if (!empty($salidas)): ?>
-        <?php renderTablaMovimientos('REPORTE DE SALIDAS', 'text-rose-600', 'bg-rose-600', $salidas, $fechaUnicaSalidas, 'N° Cotización'); ?>
+        <?php renderTablaMovimientos('REPORTE DE SALIDAS', 'text-rose-600', 'bg-rose-600', $salidas, $fechaUnicaSalidas, 'N° Cotización', false); ?>
     <?php endif; ?>
 
     <!-- SALTO DE PÁGINA ENTRE SALIDAS Y ENTRADAS -->
@@ -179,7 +192,7 @@
 
     <!-- ENTRADAS -->
     <?php if (!empty($entradas)): ?>
-        <?php renderTablaMovimientos('REPORTE DE ENTRADAS', 'text-emerald-600', 'bg-emerald-600', $entradas, $fechaUnicaEntradas, 'Orden de Compra'); ?>
+        <?php renderTablaMovimientos('REPORTE DE ENTRADAS', 'text-emerald-600', 'bg-emerald-600', $entradas, $fechaUnicaEntradas, 'Orden de Compra', true); ?>
     <?php endif; ?>
 
     <!-- SIN DATOS -->

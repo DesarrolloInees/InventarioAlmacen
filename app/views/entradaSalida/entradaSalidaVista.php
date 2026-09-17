@@ -174,19 +174,25 @@ if (!defined('ENTRADA_PRINCIPAL'))
                     if (!empty($todosLosMovimientos)):
                         foreach ($todosLosMovimientos as $mov):
                             $esEntrada = ($mov['tipo'] ?? '') === 'ENTRADA';
+                            $esRecuperado = (($mov['origen_entrada'] ?? null) === 'RECUPERADO');
                             $colorTipo = $esEntrada ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-red-600 dark:text-red-400 font-bold';
                             $fechaRaw = str_replace('/', '-', $mov['fecha']);
                             $fechaISO = date('Y-m-d', strtotime($fechaRaw));
                             $idMov = $mov['id_movimiento'] ?? 0;
                             $articulo = htmlspecialchars($mov['articulo'] ?? '', ENT_QUOTES);
                             $cantidad = (int) ($mov['cantidad'] ?? 0);
+                            $etiquetaTipo = $esRecuperado ? 'RECUPERADO' : ($mov['tipo'] ?? '');
+                            $articuloFull = $mov['articulo'] ?? '';
+                            if ($esRecuperado && !empty($mov['tecnico_origen']) && $mov['tecnico_origen'] !== 'N/A') {
+                                $articuloFull .= ' | Tec: ' . $mov['tecnico_origen'];
+                            }
                             ?>
                             <tr
                                 class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                 <td class="px-4 py-3 whitespace-nowrap"><?= $fechaISO ?></td>
-                                <td class="px-4 py-3 <?= $colorTipo ?>"><?= htmlspecialchars($mov['tipo'] ?? '') ?></td>
+                                <td class="px-4 py-3 <?= $colorTipo ?>"><?= htmlspecialchars($etiquetaTipo) ?><?php if ($esRecuperado): ?> <span class="ml-1 px-2 py-0.5 text-[10px] rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 font-bold">REC</span><?php endif; ?></td>
                                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                                    <?= htmlspecialchars($mov['articulo'] ?? '') ?>
+                                    <?= htmlspecialchars($articuloFull) ?>
                                 </td>
                                 <td class="px-4 py-3 font-bold text-center"><?= $esEntrada ? '+' : '-' ?><?= $cantidad ?></td>
                                 <td class="px-4 py-3 max-w-xs break-all"><?= htmlspecialchars($mov['novedad'] ?? 'N/A') ?></td>

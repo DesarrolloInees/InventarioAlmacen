@@ -12,13 +12,25 @@ class CompraVerModelo
         $this->conn = $db;
     }
 
-    // Obtener el historial completo fusionando Repuestos y Productos + Factura
+    // Obtener el historial SOLO de compras (excluye RECUPERADO para no mezclar flujos)
+    private function tieneColOrigen()
+    {
+        try {
+            $st = $this->conn->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'movimientos_inventario' AND COLUMN_NAME = 'origen_entrada'");
+            $st->execute();
+            return (bool)$st->fetchColumn();
+        } catch (PDOException $e) { return false; }
+    }
+
     public function obtenerHistorialCompras()
     {
         try {
-            $sql = "SELECT 
-                        m.id_movimiento, 
-                        m.cantidad, 
+            $filtro = $this->tieneColOrigen()
+                ? "WHERE m.tipo_movimiento = 'ENTRADA' AND (m.origen_entrada = 'COMPRA' OR m.origen_entrada IS NULL)"
+                : "WHERE m.tipo_movimiento = 'ENTRADA'";
+            $sql = "SELECT
+                        m.id_movimiento,
+                        m.cantidad,
                         m.precio_compra, 
                         m.numero_factura,
                         m.observacion, 
@@ -37,7 +49,7 @@ class CompraVerModelo
                     LEFT JOIN productos p ON m.id_producto = p.id_producto
                     INNER JOIN usuarios u ON m.id_usuario_registra = u.usuario_id
                     LEFT JOIN proveedores prov ON m.id_proveedor = prov.id_proveedor
-                    WHERE m.tipo_movimiento = 'ENTRADA'
+                    " . $filtro . "
                     ORDER BY m.fecha_movimiento DESC";
 
             $stmt = $this->conn->prepare($sql);

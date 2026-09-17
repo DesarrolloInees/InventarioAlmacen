@@ -62,6 +62,13 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 <a href="<?= BASE_URL ?>compraVer"
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Ver Compras
                 </a>
+                <a href="<?= BASE_URL ?>recuperacionCrear"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Entrada Recuperados (Tecnicos)
+                </a>
+                <a href="<?= BASE_URL ?>recuperacionVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Ver Recuperados
+                </a>
+
             </div>
         </details>
 
@@ -152,6 +159,9 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
             <div class="text-gray-600 dark:text-gray-400 mt-1 mb-2 pl-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg py-2">
                 <a href="<?= BASE_URL ?>entradaSalida"
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Movimientos Inventario
+                </a>
+                <a href="<?= BASE_URL ?>recuperacionVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Recuperados Tecnicos
                 </a>
             </div>
         </details>
