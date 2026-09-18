@@ -95,11 +95,45 @@ class RecuperacionCrearModelo
         }
         return $listaFinal;
     }
+    // Crea un repuesto en el catalogo cuando la entrada es manual.
+    // Debe llamarse DENTRO de la transaccion de registrarRecuperado.
+    private function insertarRepuestoManual($cfg)
+    {
+        $nombre = trim($cfg['nombre'] ?? '');
+        if ($nombre === '') return 0;
+        $condicion = in_array($cfg['condicion'] ?? '', ['nuevo', 'recuperado', 'por revisar']) ? $cfg['condicion'] : 'recuperado';
+        $codigo = strtoupper(trim($cfg['codigo'] ?? ''));
+        $stCod = $this->conn->prepare("SELECT COUNT(*) FROM repuestos WHERE codigo_referencia = :c");
+        if ($codigo !== '') {
+            $stCod->execute([':c' => $codigo]);
+            if ((int)$stCod->fetchColumn() > 0) {
+                throw new PDOException("El codigo '$codigo' ya existe en el catalogo.");
+            }
+        } else {
+            do {
+                $codigo = 'REC-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+                $stCod->execute([':c' => $codigo]);
+            } while ((int)$stCod->fetchColumn() > 0);
+        }
+        $ins = $this->conn->prepare("INSERT INTO repuestos (id_categoria, codigo_referencia, condicion, nombre_repuesto, valor_venta, estado) VALUES (NULL, :cod, :cond, :nom, 0.00, 1)");
+        $ins->execute([':cod' => $codigo, ':cond' => $condicion, ':nom' => $nombre]);
+        return (int)$this->conn->lastInsertId();
+    }
+
     // Guarda ENTRADA RECUPERADO y suma stock. Sin factura/proveedor/precio.
+    // Si viene crear_repuesto (entrada manual), primero crea el repuesto en catalogo.
     public function registrarRecuperado($datos)
     {
         try {
             $this->conn->beginTransaction();
+            $idRepuesto = !empty($datos['id_repuesto']) ? intval($datos['id_repuesto']) : null;
+            $idProducto = !empty($datos['id_producto']) ? intval($datos['id_producto']) : null;
+            $manualNombre = $datos['repuesto_manual'] ?? null;
+            if (empty($idRepuesto) && empty($idProducto) && !empty($datos['crear_repuesto']['nombre'])) {
+                $idRepuesto = $this->insertarRepuestoManual($datos['crear_repuesto']);
+                if (!$idRepuesto) throw new PDOException("No se pudo crear el repuesto desde la entrada manual.");
+                $manualNombre = null;
+            }
             $conOrigen = $this->tieneSoporteRecuperado();
             if ($conOrigen) {
                 $sqlMov = "INSERT INTO movimientos_inventario (id_repuesto, id_producto, repuesto_manual, tipo_movimiento, cantidad, origen_entrada, serial_recuperado, id_tecnico_origen, tecnico_origen_nombre, novedad, observacion, id_usuario_registra, fecha_movimiento) VALUES (:id_repuesto, :id_producto, :repuesto_manual, 'ENTRADA', :cantidad, 'RECUPERADO', :serial_recuperado, :id_tecnico_origen, :tecnico_origen_nombre, :novedad, :observacion, :id_usuario_registra, :fecha_movimiento)";
@@ -107,10 +141,10 @@ class RecuperacionCrearModelo
                 $sqlMov = "INSERT INTO movimientos_inventario (id_repuesto, id_producto, repuesto_manual, tipo_movimiento, cantidad, novedad, observacion, id_usuario_registra, fecha_movimiento) VALUES (:id_repuesto, :id_producto, :repuesto_manual, 'ENTRADA', :cantidad, :novedad, :observacion, :id_usuario_registra, :fecha_movimiento)";
             }
             $stmtMov = $this->conn->prepare($sqlMov);
-            $stmtMov->bindValue(':id_repuesto', !empty($datos['id_repuesto']) ? $datos['id_repuesto'] : null, PDO::PARAM_INT);
-            $stmtMov->bindValue(':id_producto', !empty($datos['id_producto']) ? $datos['id_producto'] : null, PDO::PARAM_INT);
-            if (empty($datos['id_repuesto']) && empty($datos['id_producto'])) {
-                $stmtMov->bindValue(':repuesto_manual', $datos['repuesto_manual']);
+            $stmtMov->bindValue(':id_repuesto', $idRepuesto, PDO::PARAM_INT);
+            $stmtMov->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+            if (empty($idRepuesto) && empty($idProducto)) {
+                $stmtMov->bindValue(':repuesto_manual', $manualNombre);
             } else {
                 $stmtMov->bindValue(':repuesto_manual', null, PDO::PARAM_NULL);
             }
@@ -127,12 +161,12 @@ class RecuperacionCrearModelo
             $stmtMov->execute();
             $targetCol = null;
             $targetId = null;
-            if (!empty($datos['id_repuesto'])) {
+            if (!empty($idRepuesto)) {
                 $targetCol = 'id_repuesto';
-                $targetId = $datos['id_repuesto'];
-            } elseif (!empty($datos['id_producto'])) {
+                $targetId = $idRepuesto;
+            } elseif (!empty($idProducto)) {
                 $targetCol = 'id_producto';
-                $targetId = $datos['id_producto'];
+                $targetId = $idProducto;
             }
             if ($targetCol) {
                 $stmtCheck = $this->conn->prepare("SELECT id_stock FROM inventario_stock WHERE $targetCol = :id LIMIT 1");

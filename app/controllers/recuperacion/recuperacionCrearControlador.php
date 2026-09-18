@@ -38,6 +38,9 @@ class recuperacionCrearControlador
             $idRepuesto = ($tipoItem === 'repuesto') ? trim($_POST['id_repuesto'] ?? '') : '';
             $idProducto = ($tipoItem === 'producto') ? trim($_POST['id_producto'] ?? '') : '';
             $nombreManual = ($tipoItem === 'manual') ? trim($_POST['repuesto_manual'] ?? '') : '';
+            $codigoManual = ($tipoItem === 'manual') ? strtoupper(trim($_POST['codigo_manual'] ?? '')) : '';
+            $condicionManual = ($tipoItem === 'manual') ? ($_POST['condicion_manual'] ?? 'recuperado') : 'recuperado';
+            if (!in_array($condicionManual, ['nuevo', 'recuperado', 'por revisar'])) $condicionManual = 'recuperado';
             $idTecnico = trim($_POST['id_tecnico_origen'] ?? '');
             $origenTec = null;
             $idTecnicoLocal = null;
@@ -79,6 +82,8 @@ class recuperacionCrearControlador
                 'id_repuesto' => $idRepuesto,
                 'id_producto' => $idProducto,
                 'repuesto_manual' => $nombreManual,
+                'codigo_manual' => $codigoManual,
+                'condicion_manual' => $condicionManual,
                 'id_tecnico_origen' => $idTecnico,
                 'serial_recuperado' => $serial,
                 'cantidad' => $cantidad,
@@ -98,7 +103,8 @@ class recuperacionCrearControlador
                 $datos = [
                     'id_repuesto' => $idRepuesto !== '' ? intval($idRepuesto) : null,
                     'id_producto' => $idProducto !== '' ? intval($idProducto) : null,
-                    'repuesto_manual' => $nombreManual !== '' ? $nombreManual : null,
+                    'repuesto_manual' => null,
+                    'crear_repuesto' => $tipoItem === 'manual' ? ['nombre' => $nombreManual, 'codigo' => $codigoManual, 'condicion' => $condicionManual] : null,
                     'id_tecnico_origen' => $origenTec === 'local' ? $idTecnicoLocal : null,
                     'tecnico_origen_nombre' => $origenTec === 'moto' ? $nombreTecExterno : null,
                     'serial_recuperado' => $serial !== '' ? $serial : null,
