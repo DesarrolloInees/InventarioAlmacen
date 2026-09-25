@@ -82,21 +82,32 @@ if (!defined('ENTRADA_PRINCIPAL'))
 <div class="w-full px-4 md:px-6 py-6">
 
     <!-- TARJETAS DE KPIs -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <?php $tieneMaqVista = !empty($kpis['maquinas_entradas']) || !empty($kpis['maquinas_salidas']); ?>
+    <div class="grid grid-cols-1 sm:grid-cols-2 <?= $tieneMaqVista ? 'md:grid-cols-5' : 'md:grid-cols-4' ?> gap-4 mb-6">
         <div
             class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm border-l-4 border-l-emerald-500 transition-colors">
-            <p class="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">Total Entradas</p>
+            <p class="text-xs uppercase font-bold text-gray-500 dark:text-gray-400"><?= $tieneMaqVista ? 'Total Entradas (Repuestos)' : 'Total Entradas' ?></p>
             <p class="text-3xl font-black text-gray-800 dark:text-white mt-1">
                 <?= number_format($kpis['total_entradas'] ?? 0) ?>
             </p>
         </div>
         <div
             class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm border-l-4 border-l-red-500 transition-colors">
-            <p class="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">Total Salidas</p>
+            <p class="text-xs uppercase font-bold text-gray-500 dark:text-gray-400"><?= $tieneMaqVista ? 'Total Salidas (Repuestos)' : 'Total Salidas' ?></p>
             <p class="text-3xl font-black text-gray-800 dark:text-white mt-1">
                 <?= number_format($kpis['total_salidas'] ?? 0) ?>
             </p>
         </div>
+        <?php if ($tieneMaqVista): ?>
+        <div
+            class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm border-l-4 border-l-purple-500 transition-colors">
+            <p class="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">Máquinas — Entradas</p>
+            <p class="text-3xl font-black text-gray-800 dark:text-white mt-1">
+                <?= number_format($kpis['maquinas_entradas'] ?? 0) ?>
+            </p>
+            <p class="text-[11px] text-gray-400 mt-1">Salidas: <?= number_format($kpis['maquinas_salidas'] ?? 0) ?></p>
+        </div>
+        <?php endif; ?>
         <div
             class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm border-l-4 border-l-blue-500 transition-colors">
             <p class="text-xs uppercase font-bold text-gray-500 dark:text-gray-400">Balance Neto</p>

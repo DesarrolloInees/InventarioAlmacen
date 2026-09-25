@@ -72,21 +72,34 @@
     </div>
 
     <!-- KPIs -->
-    <div class="grid grid-cols-5 gap-4 mb-6 avoid-break">
+    <?php
+    $tieneMaquinas = !empty($kpis['maquinas_entradas']) || !empty($kpis['maquinas_salidas']);
+    $colsClass = $tieneMaquinas ? 'grid-cols-6' : 'grid-cols-5';
+    ?>
+    <div class="grid <?= $colsClass ?> gap-4 mb-6 avoid-break">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl">📥</div>
             <div>
-                <p class="text-[10px] uppercase font-bold text-slate-400">Total Entradas</p>
+                <p class="text-[10px] uppercase font-bold text-slate-400"><?= $tieneMaquinas ? 'Entradas Repuestos' : 'Total Entradas' ?></p>
                 <p class="text-2xl font-black text-emerald-700"><?= number_format($kpis['total_entradas']) ?></p>
             </div>
         </div>
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 text-2xl">📤</div>
             <div>
-                <p class="text-[10px] uppercase font-bold text-slate-400">Total Salidas</p>
+                <p class="text-[10px] uppercase font-bold text-slate-400"><?= $tieneMaquinas ? 'Salidas Repuestos' : 'Total Salidas' ?></p>
                 <p class="text-2xl font-black text-rose-700"><?= number_format($kpis['total_salidas']) ?></p>
             </div>
         </div>
+        <?php if ($tieneMaquinas): ?>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 text-2xl">🤖</div>
+            <div>
+                <p class="text-[10px] uppercase font-bold text-slate-400">Máquinas In / Out</p>
+                <p class="text-2xl font-black text-violet-700"><?= number_format($kpis['maquinas_entradas'] ?? 0) ?> / <?= number_format($kpis['maquinas_salidas'] ?? 0) ?></p>
+            </div>
+        </div>
+        <?php endif; ?>
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl">⚖️</div>
             <div>

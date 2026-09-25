@@ -69,6 +69,13 @@ $ciudadesMotorizados = [
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
                 <i class="fas fa-dolly text-indigo-600 mr-2"></i> Movimientos de Inventario
             </h1>
+            <?php if (!empty($data['precargue'])): ?>
+                <div class="mt-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+                    <i class="fas fa-robot mr-2"></i>
+                    <b><?= count($data['precargue']) ?> máquina(s) terminadas en inees3</b> pendientes de salida.
+                    Selecciónalas abajo en el grupo “Máquinas terminadas (inees3)” y confirma.
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -159,6 +166,25 @@ $ciudadesMotorizados = [
                                     </option>
                                 <?php endforeach; ?>
                             </optgroup>
+                            <?php if (!empty($data['precargue'])): ?>
+                                <optgroup label="Máquinas terminadas (inees3) — precargue">
+                                    <?php foreach ($data['precargue'] as $pm): ?>
+                                        <option value="MAQ-<?= htmlspecialchars($pm['serial']) ?>"
+                                            data-tipo="maquina"
+                                            data-nombre="Máquina <?= htmlspecialchars($pm['nombre_tipo_maquina'] ?? '') ?>"
+                                            data-codigo="<?= htmlspecialchars($pm['serial']) ?>"
+                                            data-condicion="terminada"
+                                            data-stock="1"
+                                            data-orden="<?= (int)$pm['orden_id'] ?>"
+                                            data-ubicacion="<?= htmlspecialchars($pm['nombre_bodega'] ?? 'Sin bodega') ?>">
+                                            [MÁQUINA] [<?= htmlspecialchars($pm['serial']) ?>]
+                                            <?= htmlspecialchars($pm['nombre_tipo_maquina'] ?? '') ?>
+                                            — Orden #<?= (int)$pm['orden_id'] ?>
+                                            (<?= htmlspecialchars($pm['nombre_bodega'] ?? 'Sin bodega') ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endif; ?>
                         </select>
                     </div>
                 </div>
@@ -224,7 +250,8 @@ $ciudadesMotorizados = [
                 nombre: el.nombre,
                 codigo: el.codigo,
                 condicion: el.condicion,
-                stock: parseInt(el.stock)
+                stock: parseInt(el.stock),
+                orden_id: el.orden ? parseInt(el.orden) : null
             });
 
             $(this).val(null).trigger('change');
@@ -249,7 +276,8 @@ $ciudadesMotorizados = [
                         nombre: el.nombre,
                         codigo: el.codigo,
                         condicion: el.condicion,
-                        stock: parseInt(el.stock)
+                        stock: parseInt(el.stock),
+                        orden_id: el.orden ? parseInt(el.orden) : null
                     });
                     $(this).val('');
                 } else {
@@ -298,6 +326,19 @@ $ciudadesMotorizados = [
     function agregarAlCarrito(item) {
         item.novedad = item.novedad || '';
 
+        // Las máquinas son unitarias: nunca fusionar, stock siempre 1.
+        if (item.tipo === 'maquina') {
+            if (carrito.some(x => x.tipo === 'maquina' && x.codigo === item.codigo)) {
+                Swal.fire('Atención', 'Esa máquina ya está en el carrito.', 'warning');
+                return;
+            }
+            item.cantidad = 1;
+            item.stock = 1;
+            carrito.push(item);
+            renderizarCarrito();
+            return;
+        }
+
         // Solo fusiona cantidad si ya existe el mismo ítem Y aún no tiene novedad/serial escrito.
         // Si ya tiene novedad, se crea una fila nueva (para poder distinguir seriales).
         let existe = item.id !== 'OTRO'
@@ -322,9 +363,11 @@ $ciudadesMotorizados = [
         carrito.forEach((item, index) => {
             let etiqueta = item.id === 'OTRO'
                 ? `<span class="text-[10px] bg-orange-100 text-orange-800 font-bold px-1.5 py-0.5 rounded uppercase">Manual</span>`
-                : (item.tipo === 'repuesto'
+                : (item.tipo === 'maquina'
+                    ? `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded uppercase">Máquina inees3${item.orden_id ? ' — Orden #' + item.orden_id : ''}</span>`
+                    : (item.tipo === 'repuesto'
                     ? `<span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded uppercase">Repuesto — ${item.condicion}</span>`
-                    : `<span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.5 rounded uppercase">Consumible</span>`);
+                    : `<span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-1.5 py-0.5 rounded uppercase">Consumible</span>`));
 
             html += `
         <tr class="dark:text-gray-300">

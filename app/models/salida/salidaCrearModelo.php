@@ -90,6 +90,24 @@ class SalidaCrearModelo
         }
     }
 
+    public function obtenerMaquinasPrecargue()
+    {
+        try {
+            $sql = "SELECT p.id_precargue, p.serial, p.orden_id, p.armado_id,
+                           p.nombre_tipo_maquina, p.fecha_terminado,
+                           m.id_maquina, m.id_bodega, b.nombre_bodega
+                    FROM salidas_precargue p
+                    LEFT JOIN inventario_maquinas m ON m.numero_serie = p.serial
+                    LEFT JOIN bodegas b ON m.id_bodega = b.id_bodega
+                    WHERE p.estado = 'pendiente'
+                    ORDER BY p.fecha_terminado ASC";
+            return $this->conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("precargue lista: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function obtenerCatalogoCompleto()
     {
         try {
@@ -171,8 +189,9 @@ class SalidaCrearModelo
 
             foreach ($items as $item) {
                 $esManual = empty($item['id']) || $item['id'] === 'OTRO';
-                $esRepuesto = ($item['tipo'] === 'repuesto');
-                $idItem = $esManual ? null : intval($item['id']);
+                $esMaquina = (($item['tipo'] ?? '') === 'maquina');
+                $esRepuesto = (($item['tipo'] ?? '') === 'repuesto');
+                $idItem = ($esManual || $esMaquina) ? null : intval($item['id']);
                 $cantidad = intval($item['cantidad']);
                 $codigoRef = $item['codigo'] ?? '';
                 $columnaFiltro = $esRepuesto ? 'id_repuesto' : 'id_producto';
@@ -180,7 +199,34 @@ class SalidaCrearModelo
                 if ($cantidad <= 0)
                     throw new Exception("Cantidad inválida para ítem.");
 
-                // Descontar Stock
+                // RAMA MAQUINAS (vienen de inees3 precargue): SALIDA_REMISION + id_bodega=NULL + precargue confirmado.
+                if ($esMaquina) {
+                    $serial = trim((string)($item['codigo'] ?? $item['nombre'] ?? ''));
+                    if ($serial === '' || $serial === 'S/C') throw new Exception("Serial de máquina inválido.");
+                    $stmtMq = $this->conn->prepare("SELECT id_maquina, id_bodega FROM inventario_maquinas WHERE numero_serie = :s FOR UPDATE");
+                    $stmtMq->execute([':s' => $serial]);
+                    $maq = $stmtMq->fetch(PDO::FETCH_ASSOC);
+                    if (!$maq) throw new Exception("Máquina $serial no existe en inventario.");
+                    if (empty($maq['id_bodega'])) throw new Exception("Máquina $serial ya está fuera de bodega.");
+                    $obsM = "Salida por armado terminado inees3"
+                        . (!empty($item['orden_id']) ? " orden #" . $item['orden_id'] : "")
+                        . ($destino ? " destino $destino" : "")
+                        . ($remision ? " rem $remision" : "");
+                    $stmtMovM = $this->conn->prepare(
+                        "INSERT INTO movimientos_maquinas (id_maquina, id_bodega_origen, id_bodega_destino, tipo_movimiento, id_usuario_registra, observacion)
+                         VALUES (:m, :o, NULL, 'SALIDA_REMISION', :u, :obs)"
+                    );
+                    $stmtMovM->execute([':m' => $maq['id_maquina'], ':o' => $maq['id_bodega'], ':u' => $idAdmin, ':obs' => $obsM]);
+                    $stmtUpdM = $this->conn->prepare("UPDATE inventario_maquinas SET id_bodega = NULL WHERE id_maquina = :m");
+                    $stmtUpdM->execute([':m' => $maq['id_maquina']]);
+                    if (!empty($item['orden_id'])) {
+                        $stmtP = $this->conn->prepare("UPDATE salidas_precargue SET estado='confirmado' WHERE orden_id = :o AND estado='pendiente'");
+                        $stmtP->execute([':o' => $item['orden_id']]);
+                    }
+                    continue;
+                }
+
+                // Descontar Stock (repuestos/productos)
                 if (!$esManual) {
                     $sqlStock = "SELECT cantidad_total FROM inventario_stock WHERE $columnaFiltro = :id FOR UPDATE";
                     $stmtS = $this->conn->prepare($sqlStock);

@@ -87,7 +87,8 @@ class salidaCrearControlador
             'titulo' => 'Movimientos de Almacén',
             'tecnicos' => $this->modelo->obtenerTecnicos(),
             'inventario' => $this->modelo->obtenerInventarioDisponible(), // para SALIDA (con stock)
-            'catalogo' => $this->modelo->obtenerCatalogoCompleto()        // para ENTRADA (todo el catálogo)
+            'catalogo' => $this->modelo->obtenerCatalogoCompleto(),       // para ENTRADA (todo el catálogo)
+            'precargue' => $this->modelo->obtenerMaquinasPrecargue(),     // máquinas terminadas en inees3
         ];
 
         $vistaContenido = "app/views/salida/salidaCrearVista.php";

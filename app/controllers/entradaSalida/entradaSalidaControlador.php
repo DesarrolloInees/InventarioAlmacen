@@ -97,6 +97,64 @@ class entradaSalidaControlador
             }
         }
 
+        // ============ MÁQUINAS (movimientos_maquinas) -> SE FUSIONAN en entradas/salidas ============
+        $kpisMaq = $this->modelo->getKpisMaquinas($fechaDesde, $fechaHasta);
+        $kpis['maquinas_entradas'] = (int) ($kpisMaq['maquinas_entradas'] ?? 0);
+        $kpis['maquinas_salidas'] = (int) ($kpisMaq['maquinas_salidas'] ?? 0);
+        $kpis['maquinas_traslados'] = (int) ($kpisMaq['maquinas_traslados'] ?? 0);
+        $kpis['maquinas_distintas'] = (int) ($kpisMaq['maquinas_distintas'] ?? 0);
+
+        $maquinasRaw = $this->modelo->getMovimientosMaquinas($fechaDesde, $fechaHasta);
+        if (!is_array($maquinasRaw)) $maquinasRaw = [];
+
+        // Textos internos que NO deben salir en el reporte
+        $limpiarObs = function ($obs) {
+            $obs = trim((string)($obs ?? ''));
+            if ($obs === '') return 'N/A';
+            // Quitar coletillas internas del espejo
+            $quitar = ['Alta desde inees3', 'Carga historica inees3', 'inees3'];
+            $obs = str_ireplace($quitar, '', $obs);
+            // Limpiar separadores/puntuación residual
+            $obs = preg_replace('/\s+/', ' ', $obs);
+            $obs = trim($obs, " -–—|:,;.");
+            return $obs === '' ? 'N/A' : $obs;
+        };
+
+        foreach ($maquinasRaw as $mm) {
+            $fechaF = date('d/m/Y', strtotime($mm['fecha_movimiento']));
+            $origen = trim((string)($mm['bodega_origen'] ?? ''));
+            if ($origen === '') $origen = 'Laboratorio';
+            $destino = trim((string)($mm['bodega_destino'] ?? ''));
+            if ($destino === '') $destino = 'N/A';
+            $esIngreso = ($mm['tipo_movimiento'] === 'INGRESO');
+            $filaM = [
+                'id_movimiento' => 'M-' . $mm['id_mov_maquina'],
+                'fecha' => $fechaF,
+                'articulo' => '[' . $mm['numero_serie'] . '] ' . $mm['nombreTipoMaquina'],
+                'cantidad' => 1,
+                'novedad' => $limpiarObs($mm['observacion'] ?? null),
+                'destino' => $esIngreso ? $destino : $destino,
+                'remision' => 'N/A',
+                'cotizacion' => 'N/A',
+                'usuario' => $mm['nombre_usuario'] ?? 'Sistema',
+                'tipo' => $esIngreso ? 'ENTRADA' : 'SALIDA',
+                'origen_entrada' => null,
+                'tecnico_origen' => null,
+            ];
+            if ($esIngreso) {
+                // INGRESO (creación) -> ENTRADAS. Destino = bodega donde ingresó.
+                $filaM['destino'] = $destino;
+                $entradas[] = $filaM;
+                $entradasFechasUnicas[$fechaF] = true;
+            } elseif ($mm['tipo_movimiento'] === 'SALIDA_REMISION') {
+                // SALIDA_REMISION (finalizada/salidaCrear) -> SALIDAS. Origen = bodega de salida.
+                $filaM['destino'] = $origen !== 'Laboratorio' ? $origen : 'N/A';
+                $salidas[] = $filaM;
+                $salidasFechasUnicas[$fechaF] = true;
+            }
+            // TRASLADO se omite del reporte (movimiento interno, ni entrada ni salida).
+        }
+
         $fechaUnicaSalidas = count($salidasFechasUnicas) === 1 ? array_key_first($salidasFechasUnicas) : null;
         $fechaUnicaEntradas = count($entradasFechasUnicas) === 1 ? array_key_first($entradasFechasUnicas) : null;
 
