@@ -118,6 +118,26 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
             </div>
         </details>
 
+        <!-- Acordeón: Herramientas -->
+        <details class="group mb-1">
+            <summary
+                class="flex justify-between items-center cursor-pointer list-none text-gray-800 dark:text-gray-300 py-3 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg select-none transition-colors">
+                <span class="font-medium"><i class="fas fa-tools mr-3 w-5 text-center text-gray-500 dark:text-gray-400"></i>
+                    Herramientas</span>
+                <span class="transition-transform group-open:rotate-180">
+                    <i class="fas fa-chevron-down text-sm"></i>
+                </span>
+            </summary>
+            <div class="text-gray-600 dark:text-gray-400 mt-1 mb-2 pl-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg py-2">
+                <a href="<?= BASE_URL ?>herramientaCrear"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Nueva Herramienta
+                </a>
+                <a href="<?= BASE_URL ?>herramientaVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Gestionar Herramientas
+                </a>
+            </div>
+        </details>
+
         <!-- Acordeón: Logistica -->
         <details class="group mb-1">
             <summary
