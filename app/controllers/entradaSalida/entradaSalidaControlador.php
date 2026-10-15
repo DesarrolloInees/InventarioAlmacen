@@ -124,17 +124,27 @@ class entradaSalidaControlador
             $fechaF = date('d/m/Y', strtotime($mm['fecha_movimiento']));
             $origen = trim((string)($mm['bodega_origen'] ?? ''));
             if ($origen === '') $origen = 'Laboratorio';
-            $destino = trim((string)($mm['bodega_destino'] ?? ''));
-            if ($destino === '') $destino = 'N/A';
+            $destinoBodega = trim((string)($mm['bodega_destino'] ?? ''));
+            if ($destinoBodega === '') $destinoBodega = 'N/A';
             $esIngreso = ($mm['tipo_movimiento'] === 'INGRESO');
+
+            // Campos nuevos (columnas reales de BD, con fallback a observacion)
+            $remisionM  = trim((string)($mm['remision'] ?? ''));
+            $destinoTxt = trim((string)($mm['destino_texto'] ?? ''));
+            $novedadM   = trim((string)($mm['novedad'] ?? ''));
+            $obsM       = trim((string)($mm['observacion'] ?? ''));
+
+            // Novedad: usar columna novedad si existe, si no, la observacion
+            $novedadFinal = $novedadM !== '' ? $novedadM : ($obsM !== '' ? $obsM : 'N/A');
+
             $filaM = [
                 'id_movimiento' => 'M-' . $mm['id_mov_maquina'],
                 'fecha' => $fechaF,
                 'articulo' => '[' . $mm['numero_serie'] . '] ' . $mm['nombreTipoMaquina'],
                 'cantidad' => 1,
-                'novedad' => $limpiarObs($mm['observacion'] ?? null),
-                'destino' => $esIngreso ? $destino : $destino,
-                'remision' => 'N/A',
+                'novedad' => $novedadFinal,
+                'destino' => $destinoTxt !== '' ? $destinoTxt : $destinoBodega,
+                'remision' => $remisionM !== '' ? $remisionM : 'N/A',
                 'cotizacion' => 'N/A',
                 'usuario' => $mm['nombre_usuario'] ?? 'Sistema',
                 'tipo' => $esIngreso ? 'ENTRADA' : 'SALIDA',
@@ -143,12 +153,12 @@ class entradaSalidaControlador
             ];
             if ($esIngreso) {
                 // INGRESO (creación) -> ENTRADAS. Destino = bodega donde ingresó.
-                $filaM['destino'] = $destino;
+                $filaM['destino'] = $destinoBodega;
                 $entradas[] = $filaM;
                 $entradasFechasUnicas[$fechaF] = true;
             } elseif ($mm['tipo_movimiento'] === 'SALIDA_REMISION') {
                 // SALIDA_REMISION (finalizada/salidaCrear) -> SALIDAS. Origen = bodega de salida.
-                $filaM['destino'] = $origen !== 'Laboratorio' ? $origen : 'N/A';
+                $filaM['destino'] = $destinoTxt !== '' ? $destinoTxt : ($origen !== 'Laboratorio' ? $origen : 'N/A');
                 $salidas[] = $filaM;
                 $salidasFechasUnicas[$fechaF] = true;
             }

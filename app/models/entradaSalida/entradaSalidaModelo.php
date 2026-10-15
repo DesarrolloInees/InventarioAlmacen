@@ -142,7 +142,16 @@ class EntradaSalidaModelo
                 return [];
             }
 
+            // Columnas nuevas (tolerancia a migraciones pendientes)
+            $tieneRemision = $this->tieneColumnaEnTabla('movimientos_maquinas', 'remision');
+            $tieneDestino  = $this->tieneColumnaEnTabla('movimientos_maquinas', 'destino_texto');
+            $tieneNovedad  = $this->tieneColumnaEnTabla('movimientos_maquinas', 'novedad');
+            $selRemision = $tieneRemision ? 'mm.remision,' : 'NULL AS remision,';
+            $selDestino  = $tieneDestino  ? 'mm.destino_texto,' : 'NULL AS destino_texto,';
+            $selNovedad  = $tieneNovedad  ? 'mm.novedad,' : 'NULL AS novedad,';
+
             $sql = "SELECT mm.id_mov_maquina, mm.tipo_movimiento, mm.fecha_movimiento, mm.observacion,
+                           $selRemision $selDestino $selNovedad
                            im.numero_serie, tm.nombreTipoMaquina,
                            bo.nombre_bodega AS bodega_origen, bd.nombre_bodega AS bodega_destino,
                            u.nombre AS nombre_usuario
@@ -185,6 +194,15 @@ class EntradaSalidaModelo
         try {
             $st = $this->conn->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'movimientos_inventario' AND COLUMN_NAME = :c");
             $st->execute([':c' => $col]);
+            return (bool)$st->fetchColumn();
+        } catch (PDOException $e) { return false; }
+    }
+
+    private function tieneColumnaEnTabla($tabla, $col)
+    {
+        try {
+            $st = $this->conn->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c");
+            $st->execute([':t' => $tabla, ':c' => $col]);
             return (bool)$st->fetchColumn();
         } catch (PDOException $e) { return false; }
     }

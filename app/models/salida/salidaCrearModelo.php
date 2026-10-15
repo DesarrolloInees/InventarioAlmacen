@@ -316,4 +316,118 @@ class SalidaCrearModelo
             return ['exito' => false, 'msg' => $errorCrudo];
         }
     }
+
+    /**
+     * Obtiene todas las máquinas actualmente en inventario de bodega (id_bodega con valor).
+     * Usada por la vista de Salida Masiva.
+     */
+    public function obtenerMaquinasEnBodega()
+    {
+        try {
+            $sql = "SELECT im.id_maquina, im.numero_serie, im.condicion,
+                           tm.nombreTipoMaquina, b.nombre_bodega
+                    FROM inventario_maquinas im
+                    INNER JOIN tipomaquina tm ON im.idTipoMaquina = tm.idTipoMaquina
+                    INNER JOIN bodegas b ON im.id_bodega = b.id_bodega
+                    ORDER BY b.nombre_bodega ASC, tm.nombreTipoMaquina ASC, im.numero_serie ASC";
+            $stmt = $this->conn->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error obtenerMaquinasEnBodega: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Salida masiva de máquinas: recibe un array de IDs de máquinas de inventario
+     * y las marca como SALIDA_REMISION en una sola transacción. Evita duplicados.
+     * Guarda remision, destino_texto y novedad en sus respectivas columnas.
+     *
+     * @param array  $ids_maquinas
+     * @param int    $id_usuario
+     * @param string $observacion
+     * @param string $destino
+     * @param string $remision
+     * @param string $novedad
+     * @return array
+     */
+    public function marcarSalidasManuales($ids_maquinas, $id_usuario, $observacion = '', $destino = '', $remision = '', $novedad = '')
+    {
+        try {
+            if (empty($ids_maquinas) || !is_array($ids_maquinas)) {
+                return ['exito' => false, 'msg' => 'No se recibieron máquinas para procesar.'];
+            }
+
+            // Quitar duplicados y asegurar enteros positivos
+            $ids_maquinas = array_unique($ids_maquinas);
+            $ids_maquinas = array_map('intval', $ids_maquinas);
+            $ids_maquinas = array_filter($ids_maquinas, function ($v) { return $v > 0; });
+
+            if (empty($ids_maquinas)) {
+                return ['exito' => false, 'msg' => 'No hay máquinas válidas para procesar.'];
+            }
+
+            $this->conn->beginTransaction();
+
+            // 1. Obtener bodegas actuales de cada máquina
+            $placeholders = implode(',', array_fill(0, count($ids_maquinas), '?'));
+            $sqlBodegas = "SELECT id_maquina, id_bodega FROM inventario_maquinas WHERE id_maquina IN ($placeholders)";
+            $stmtBodegas = $this->conn->prepare($sqlBodegas);
+            $stmtBodegas->execute($ids_maquinas);
+            $maquinas = $stmtBodegas->fetchAll(PDO::FETCH_ASSOC);
+
+            if (count($maquinas) !== count($ids_maquinas)) {
+                $this->conn->rollBack();
+                $existentes = array_column($maquinas, 'id_maquina');
+                $faltantes = array_diff($ids_maquinas, $existentes);
+                return ['exito' => false, 'msg' => 'Algunas máquinas no están en inventario: ' . implode(', ', $faltantes)];
+            }
+
+            // 2. Verificar duplicados: máquinas que YA tienen SALIDA_REMISION
+            $sqlCheck = "SELECT id_maquina FROM movimientos_maquinas
+                         WHERE id_maquina IN ($placeholders) AND tipo_movimiento = 'SALIDA_REMISION'";
+            $stmtCheck = $this->conn->prepare($sqlCheck);
+            $stmtCheck->execute($ids_maquinas);
+            $salidasExistentes = $stmtCheck->fetchAll(PDO::FETCH_COLUMN);
+
+            $idsDuplicados = array_intersect($ids_maquinas, $salidasExistentes);
+            if (!empty($idsDuplicados)) {
+                $this->conn->rollBack();
+                return ['exito' => false, 'msg' => 'Ya existe una salida registrada para: ' . implode(', ', $idsDuplicados) . ' (evitando duplicado)'];
+            }
+
+            // 3. Insertar SALIDA_REMISION para cada máquina con sus columnas reales
+            $sqlMov = "INSERT INTO movimientos_maquinas (id_maquina, id_bodega_origen, id_bodega_destino, tipo_movimiento, id_usuario_registra, observacion, remision, destino_texto, novedad)
+                       VALUES (:id_maquina, :id_bodega_origen, NULL, 'SALIDA_REMISION', :id_usuario, :observacion, :remision, :destino_texto, :novedad)";
+            $stmtMov = $this->conn->prepare($sqlMov);
+
+            foreach ($maquinas as $maquina) {
+                $stmtMov->bindParam(':id_maquina', $maquina['id_maquina'], PDO::PARAM_INT);
+                $stmtMov->bindParam(':id_bodega_origen', $maquina['id_bodega'], PDO::PARAM_INT);
+                $stmtMov->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+                $stmtMov->bindValue(':observacion', $observacion !== '' ? $observacion : null, $observacion !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+                $stmtMov->bindValue(':remision', $remision !== '' ? $remision : null, $remision !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+                $stmtMov->bindValue(':destino_texto', $destino !== '' ? $destino : null, $destino !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+                $stmtMov->bindValue(':novedad', $novedad !== '' ? $novedad : null, $novedad !== '' ? PDO::PARAM_STR : PDO::PARAM_NULL);
+                $stmtMov->execute();
+            }
+
+            // 4. Quitar la bodega de inventario_maquinas (máquinas salieron)
+            $sqlUpd = "UPDATE inventario_maquinas SET id_bodega = NULL WHERE id_maquina IN ($placeholders)";
+            $stmtUpd = $this->conn->prepare($sqlUpd);
+            $stmtUpd->execute($ids_maquinas);
+
+            $this->conn->commit();
+
+            return [
+                'exito' => true,
+                'msg' => 'Salidas registradas correctamente. ' . count($maquinas) . ' máquina(s) removida(s) de inventario.',
+                'cantidad' => count($maquinas)
+            ];
+
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return ['exito' => false, 'msg' => 'Error al procesar salidas: ' . $e->getMessage()];
+        }
+    }
 }

@@ -78,6 +78,98 @@ $ciudadesMotorizados = [
             <?php endif; ?>
         </div>
 
+        <!-- ===================== SALIDA MASIVA DE MÁQUINAS ===================== -->
+        <?php $maquinasEnBodega = $data['maquinasEnBodega'] ?? []; ?>
+        <?php if (!empty($maquinasEnBodega)): ?>
+        <div class="mt-6 mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold text-blue-800 dark:text-blue-200">
+                    <i class="fas fa-server mr-2"></i>Salida Masiva de Máquinas en Bodega
+                    <span class="ml-2 px-2 py-0.5 bg-blue-200 dark:bg-blue-800 text-blue-900 dark:text-blue-100 rounded-full text-xs font-bold">
+                        <?= count($maquinasEnBodega) ?> disponibles
+                    </span>
+                </h2>
+                <div class="flex gap-2">
+                    <button id="btnSeleccionarTodo" type="button"
+                        class="px-3 py-1.5 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-check-double mr-1"></i>Seleccionar Todo
+                    </button>
+                    <button id="btnLimpiarSeleccion" type="button"
+                        class="px-3 py-1.5 bg-gray-500 text-white text-sm font-bold rounded-lg hover:bg-gray-600 transition">
+                        <i class="fas fa-times mr-1"></i>Limpiar
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Selecciona las máquinas que salen de bodega y confirma. Se registrará la salida (SALIDA_REMISION)
+                y se quitarán del inventario. Si ya tienen salida registrada, el sistema lo bloqueará automáticamente.
+            </p>
+
+            <div class="max-h-72 overflow-y-auto rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-gray-800">
+                <table class="w-full text-sm" id="tablaSalidaMasiva">
+                    <thead class="bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 sticky top-0">
+                        <tr>
+                            <th class="p-2 text-center"><input type="checkbox" id="checkAllMaq"></th>
+                            <th class="p-2 text-left">Serial</th>
+                            <th class="p-2 text-left">Tipo de Máquina</th>
+                            <th class="p-2 text-left">Bodega Actual</th>
+                            <th class="p-2 text-left">Condición</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($maquinasEnBodega as $mq): ?>
+                        <tr class="border-b border-blue-100 dark:border-blue-900/40 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                            <td class="p-2 text-center">
+                                <input type="checkbox" class="checkMaquina" value="<?= (int)$mq['id_maquina'] ?>"
+                                       data-serial="<?= htmlspecialchars($mq['numero_serie']) ?>">
+                            </td>
+                            <td class="p-2 font-mono text-xs"><?= htmlspecialchars($mq['numero_serie']) ?></td>
+                            <td class="p-2"><?= htmlspecialchars($mq['nombreTipoMaquina']) ?></td>
+                            <td class="p-2"><?= htmlspecialchars($mq['nombre_bodega']) ?></td>
+                            <td class="p-2 text-xs"><?= htmlspecialchars($mq['condicion']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3 border-t border-blue-200 dark:border-blue-800 pt-3 space-y-3">
+                <p class="text-sm font-bold text-blue-800 dark:text-blue-200">
+                    <i class="fas fa-file-alt mr-1"></i>Datos de la Salida
+                </p>
+                <div>
+                    <input type="text" id="masiva_destino" placeholder="Destino específico (Opcional)"
+                        class="w-full p-2 border rounded-lg text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="masiva_remision" placeholder="Nº Remisión"
+                        class="w-full p-2 border rounded-lg text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
+                    <input type="text" id="masiva_novedad" placeholder="Novedad"
+                        class="w-full p-2 border rounded-lg text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
+                </div>
+                <div>
+                    <input type="text" id="masiva_observacion" placeholder="Observación (opcional)..."
+                        class="w-full p-2 border rounded-lg text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
+                </div>
+            </div>
+
+            <div class="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <div class="flex gap-2 flex-wrap">
+                    <button id="btnConfirmarSalidaMasiva" type="button"
+                        class="px-5 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span id="textoBotonSalida">Confirmar Salida (<span id="contadorSeleccion">0</span>)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultado de la operación -->
+            <div id="resultadoSalidaMasiva" class="hidden mt-3 p-3 rounded-lg text-sm"></div>
+        </div>
+        <?php endif; ?>
+        <!-- ===================== FIN SALIDA MASIVA ===================== -->
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <!-- CONTROLES IZQUIERDOS -->
@@ -227,6 +319,7 @@ $ciudadesMotorizados = [
 <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
 <script>
     let carrito = [];
@@ -454,4 +547,97 @@ $ciudadesMotorizados = [
             }
         });
     }
+
+    // ================================================================
+    // SALIDA MASIVA DE MÁQUINAS
+    // ================================================================
+    (function() {
+        // Contador de seleccionadas
+        function actualizarContador() {
+            const n = $('.checkMaquina:checked').length;
+            $('#contadorSeleccion').text(n);
+        }
+
+        // Seleccionar / deseleccionar todas
+        $('#checkAllMaq').on('change', function() {
+            $('.checkMaquina').prop('checked', $(this).is(':checked'));
+            actualizarContador();
+        });
+
+        $(document).on('change', '.checkMaquina', actualizarContador);
+
+        // Botones auxiliares
+        $('#btnSeleccionarTodo').on('click', function() {
+            $('#checkAllMaq').prop('checked', true);
+            $('.checkMaquina').prop('checked', true);
+            actualizarContador();
+        });
+
+        $('#btnLimpiarSeleccion').on('click', function() {
+            $('#checkAllMaq').prop('checked', false);
+            $('.checkMaquina').prop('checked', false);
+            actualizarContador();
+        });
+
+        // Confirmar salida masiva
+        $('#btnConfirmarSalidaMasiva').on('click', function() {
+            const ids = [];
+            $('.checkMaquina:checked').each(function() {
+                ids.push($(this).val());
+            });
+
+            if (ids.length === 0) {
+                Swal.fire('Sin selección', 'Selecciona al menos una máquina.', 'warning');
+                return;
+            }
+
+            const destino = $('#masiva_destino').val().trim();
+            const remision = $('#masiva_remision').val().trim();
+            const novedad = $('#masiva_novedad').val().trim();
+            const observacion = $('#masiva_observacion').val().trim();
+
+            Swal.fire({
+                title: '¿Confirmar salida de ' + ids.length + ' máquina(s)?',
+                text: 'Se registrará la salida y se quitarán del inventario de bodega.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, registrar salida',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc2626'
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $('#btnConfirmarSalidaMasiva').prop('disabled', true).text('Procesando...');
+
+                $.ajax({
+                    url: '<?= BASE_URL ?>salidaCrear?accion=marcarSalidasManuales',
+                    method: 'POST',
+                    data: {
+                        ids_maquinas: ids,
+                        destino: destino,
+                        remision: remision,
+                        novedad: novedad,
+                        observacion: observacion
+                    },
+                    success: function(res) {
+                        try {
+                            if (res.exito) {
+                                Swal.fire('¡Éxito!', res.msg, 'success').then(() => location.reload());
+                            } else {
+                                Swal.fire('Error', res.msg, 'error');
+                                $('#btnConfirmarSalidaMasiva').prop('disabled', false).text('Confirmar Salida');
+                            }
+                        } catch(e) {
+                            Swal.fire('Error del Servidor', res, 'error');
+                            $('#btnConfirmarSalidaMasiva').prop('disabled', false).text('Confirmar Salida');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'No se pudo conectar al servidor.', 'error');
+                        $('#btnConfirmarSalidaMasiva').prop('disabled', false).text('Confirmar Salida');
+                    }
+                });
+            });
+        });
+    })();
 </script>

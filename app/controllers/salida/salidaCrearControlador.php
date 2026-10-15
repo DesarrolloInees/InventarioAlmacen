@@ -89,9 +89,50 @@ class salidaCrearControlador
             'inventario' => $this->modelo->obtenerInventarioDisponible(), // para SALIDA (con stock)
             'catalogo' => $this->modelo->obtenerCatalogoCompleto(),       // para ENTRADA (todo el catálogo)
             'precargue' => $this->modelo->obtenerMaquinasPrecargue(),     // máquinas terminadas en inees3
+            'maquinasEnBodega' => $this->modelo->obtenerMaquinasEnBodega(), // para salida masiva de máquinas
         ];
 
         $vistaContenido = "app/views/salida/salidaCrearVista.php";
         include "app/views/plantillaVista.php";
+    }
+
+    /**
+     * AJAX: Salida masiva de máquinas. Recibe IDs, valida y delega en el modelo.
+     */
+    public function marcarSalidasManuales()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $idAdmin = $_SESSION['usuario_id'] ?? null;
+        if (!$idAdmin) {
+            echo json_encode(['exito' => false, 'msg' => 'Sesión expirada.']);
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['exito' => false, 'msg' => 'Método no permitido.']);
+            exit();
+        }
+
+        $idsMaquinas = $_POST['ids_maquinas'] ?? [];
+        $destino = trim($_POST['destino'] ?? '');
+        $remision = trim($_POST['remision'] ?? '');
+        $novedad = trim($_POST['novedad'] ?? '');
+        $observacion = trim($_POST['observacion'] ?? '');
+
+        // Acepta tanto array como string separado por comas
+        if (!is_array($idsMaquinas) && is_string($idsMaquinas)) {
+            $idsMaquinas = array_filter(array_map('trim', explode(',', $idsMaquinas)));
+        }
+
+        if (empty($idsMaquinas)) {
+            echo json_encode(['exito' => false, 'msg' => 'No se recibieron máquinas para procesar.']);
+            exit();
+        }
+
+        $res = $this->modelo->marcarSalidasManuales($idsMaquinas, $idAdmin, $observacion, $destino, $remision, $novedad);
+
+        echo json_encode($res);
+        exit();
     }
 }
