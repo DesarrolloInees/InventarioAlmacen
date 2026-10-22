@@ -180,6 +180,9 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 <a href="<?= BASE_URL ?>entradaSalida"
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Movimientos Inventario
                 </a>
+                <a href="<?= BASE_URL ?>registroBodegaVer"
+                    class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Registro Entradas / Salidas Bodega
+                </a>
                 <a href="<?= BASE_URL ?>recuperacionVer"
                     class="block py-2 px-4 hover:text-brand-600 dark:hover:text-white rounded">Recuperados Tecnicos
                 </a>

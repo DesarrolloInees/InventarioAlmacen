@@ -182,6 +182,10 @@ $nivel = $_SESSION['nivel_acceso'] ?? 0;
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
                 <i class="fa-solid fa-left-right w-5 text-center mr-1 text-yellow-500"></i> Movimientos Inventario
             </a>
+            <a href="<?= BASE_URL ?>registroBodegaVer"
+                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
+                <i class="fa-solid fa-clipboard-list w-5 text-center mr-1 text-orange-500"></i> Registro Entradas / Salidas Bodega
+            </a>
             <a href="<?= BASE_URL ?>recuperacionVer"
                 class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-700 hover:text-brand-600 dark:hover:text-white transition">
                 <i class="fa-solid fa-recycle w-5 text-center mr-1 text-amber-500"></i> Recuperados Tecnicos
