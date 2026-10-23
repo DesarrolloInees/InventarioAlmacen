@@ -148,6 +148,7 @@ class registroBodegaVerControlador
             $browsershot = Browsershot::html($html)
                 ->setNodeBinary('C:\\Program Files\\nodejs\\node.exe')
                 ->setNpmBinary('C:\\Program Files\\nodejs\\npm.cmd')
+                ->setChromePath($this->resolverNavegadorPdf())
                 ->setOption('args', ['--no-sandbox'])
                 ->format('A4')
                 ->landscape()
@@ -158,11 +159,9 @@ class registroBodegaVerControlador
                 ->headerHtml('<div></div>')
                 ->footerHtml($footerHtml);
 
-            $chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-            if (file_exists($chromePath)) {
-                $browsershot->setChromePath($chromePath);
-            }
-
+            // No se llama newHeadless(): se mantiene el headless: 'shell' por defecto de
+            // Browsershot, igual que entradaSalida y reporteInventario. Ese modo funciona
+            // tanto con chrome-headless-shell como con Chrome completo.
             $pdfContent = $browsershot->pdf();
             $nombreArchivo = 'RegistroBodega_' . date('d-m-Y_H-i') . '.pdf';
 
@@ -172,9 +171,127 @@ class registroBodegaVerControlador
             echo $pdfContent;
             exit;
         } catch (Throwable $e) {
+            $diagnostico = $this->diagnosticoNavegadorPdf();
+            error_log('[registroBodegaPdf] ERROR: ' . $e->getMessage() . ' | ' . $diagnostico['texto']);
+
             http_response_code(500);
             echo '<h1>Error generando PDF</h1><p>' . htmlspecialchars($e->getMessage()) . '</p>';
+
+            // Diagnóstico visible agregando ?debug=1 (útil en el servidor, sin acceso al error.log).
+            if ($this->textoGet('debug') === '1') {
+                echo $diagnostico['html'];
+            }
         }
+    }
+
+    /**
+     * Devuelve la ruta absoluta del navegador con el que se genera el PDF.
+     *
+     * Orden: chrome-headless-shell (binario pensado para PDFs) y, si no existe, Chrome
+     * completo (cache de Puppeteer o instalado en el sistema), que es el mismo navegador
+     * que ya usan los módulos entradaSalida y reporteInventario.
+     * Nunca Edge: lanzarlo desde Apache terminaba en "Code: 1002".
+     */
+    private function resolverNavegadorPdf()
+    {
+        foreach ($this->patronesNavegadorPdf() as $patron) {
+            $encontrados = glob($patron) ?: [];
+            if ($encontrados === []) {
+                continue;
+            }
+
+            rsort($encontrados, SORT_NATURAL | SORT_FLAG_CASE);
+            $ruta = str_replace('\\', '/', $encontrados[0]);
+
+            if (is_file($ruta)) {
+                error_log('[registroBodegaPdf] navegador: ' . $ruta);
+
+                return $ruta;
+            }
+        }
+
+        throw new RuntimeException(
+            'No se encontró un navegador para generar el PDF (chrome-headless-shell ni Chrome). '
+            . 'Agrega ?debug=1 a la URL para ver las rutas probadas en este servidor.'
+        );
+    }
+
+    /**
+     * Rutas (con comodines) donde se busca el navegador, en orden de preferencia.
+     */
+    private function patronesNavegadorPdf()
+    {
+        $perfil = $this->rutaSinBarraFinal(getenv('USERPROFILE'));
+        $cache = $this->rutaSinBarraFinal(getenv('PUPPETEER_CACHE_DIR'));
+
+        // 1) chrome-headless-shell: binario headless, el ideal para generar PDFs.
+        $patrones = [];
+
+        if ($cache !== '') {
+            $patrones[] = $cache . '/chrome-headless-shell/*/chrome-headless-shell-win64/chrome-headless-shell.exe';
+        }
+        if ($perfil !== '') {
+            $patrones[] = $perfil . '/.cache/puppeteer/chrome-headless-shell/*/chrome-headless-shell-win64/chrome-headless-shell.exe';
+        }
+        $patrones[] = 'C:/xampp/puppeteer-cache/chrome-headless-shell/*/chrome-headless-shell-win64/chrome-headless-shell.exe';
+        $patrones[] = 'C:/Users/*/.cache/puppeteer/chrome-headless-shell/*/chrome-headless-shell-win64/chrome-headless-shell.exe';
+
+        // 2) Chrome completo descargado por Puppeteer (mismas rutas que entradaSalida y reporteInventario).
+        if ($cache !== '') {
+            $patrones[] = $cache . '/chrome/*/chrome-win64/chrome.exe';
+        }
+        if ($perfil !== '') {
+            $patrones[] = $perfil . '/.cache/puppeteer/chrome/*/chrome-win64/chrome.exe';
+        }
+        $patrones[] = 'C:/Users/*/.cache/puppeteer/chrome/*/chrome-win64/chrome.exe';
+
+        // 3) Chrome instalado en el sistema.
+        $patrones[] = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+        $patrones[] = 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe';
+
+        // 4) Variable de entorno explícita (última opción).
+        $explicito = $this->rutaSinBarraFinal(getenv('PUPPETEER_EXECUTABLE_PATH'));
+        if ($explicito !== '' && is_file($explicito)) {
+            $patrones[] = $explicito;
+        }
+
+        return $patrones;
+    }
+
+    /**
+     * Normaliza una ruta de Windows para usarla con glob().
+     */
+    private function rutaSinBarraFinal($ruta)
+    {
+        return rtrim(str_replace('\\', '/', trim((string) $ruta)), '/');
+    }
+
+    /**
+     * Diagnóstico de rutas y entorno (para el error.log y para ?debug=1).
+     */
+    private function diagnosticoNavegadorPdf()
+    {
+        $info = [
+            'USERPROFILE: ' . ((string) getenv('USERPROFILE') ?: '(vacío)'),
+            'PUPPETEER_CACHE_DIR: ' . ((string) getenv('PUPPETEER_CACHE_DIR') ?: '(no definida)'),
+            'PHP: ' . PHP_VERSION . ' (' . PHP_SAPI . ')',
+            'Directorio actual: ' . getcwd(),
+            'Sistema: ' . php_uname('s') . ' ' . php_uname('r'),
+            'node.exe: ' . (is_file('C:/Program Files/nodejs/node.exe') ? 'OK' : 'NO EXISTE'),
+            'Buscando en:',
+        ];
+
+        foreach ($this->patronesNavegadorPdf() as $indice => $patron) {
+            $encontrados = glob($patron) ?: [];
+            $estado = ($encontrados === []) ? '[--]' : '[OK] ' . count($encontrados);
+            $info[] = sprintf('%2d. %-8s %s', $indice + 1, $estado, $patron);
+        }
+
+        $texto = implode("\n", $info);
+        $html = '<pre style="text-align:left;background:#0f172a;color:#e2e8f0;padding:12px;'
+            . 'border-radius:6px;font-size:12px;white-space:pre-wrap;">' . htmlspecialchars($texto) . '</pre>';
+
+        return ['texto' => $texto, 'html' => $html];
     }
 
     private function obtenerFiltros()
